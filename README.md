@@ -142,31 +142,36 @@ sequenceDiagram
 
 ### Pool management processes
 Executors have several states:
-* CREATED – just created; should be checkted for readiness
+* NEW – just created; should be checked for readiness
 * READY – ready for execution
-* RESERVED – locked for specific task; can be killed by timeout
+* RESERVED – locked for specific task; state can be changed only by original task or can be killed by double timeout
+* EXECUTING – in the middle of execution; can be killed by timeout
 * RELEASED – unlocked by task; should be reset
 * RESET – in the middle of reset
-* ELIMINATED – marked for elimination; should be collected as a garbadge
+* ELIMINATED – marked for elimination; should be destoryed
 
 ``` mermaid
 stateDiagram-v2
     %% creating
-    [*] --> CREATED: register new
-    CREATED --> READY: enable
+    [*] --> NEW: register new
+    NEW --> READY: enable
 
     %% execution
-    READY --> RESERVED: execution
-    RESERVED --> RELEASED: success
-    RELEASED --> RESET: cleaning 
-    RESET --> READY: enable
+    READY --> RESERVED: borrow for execution
+    RESERVED --> EXECUTING: start execution
+    EXECUTING --> RELEASED: success
+    RELEASED --> RESET: reset 
 
     %% execution not started or starvation
-    RESERVED --> RESET: timeout
+    RESERVED --> RESET: double timeout
+    EXECUTING --> RESET: timeout
+    
+    %% reset
+    RESET --> READY: enable
 
     %% elimination
     READY --> ELIMINATED: shrink pool size
-    ELIMINATED --> [*]: collected by GC
+    ELIMINATED --> [*]: destroy
 ```
 
 #### Executor creating
