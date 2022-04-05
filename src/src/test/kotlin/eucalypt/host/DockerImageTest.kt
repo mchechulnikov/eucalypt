@@ -1,9 +1,12 @@
 package eucalypt.host
 
-import org.junit.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.assertDoesNotThrow
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class DockerImageTest {
     @Test
     fun `ctor - empty name - exception`() {

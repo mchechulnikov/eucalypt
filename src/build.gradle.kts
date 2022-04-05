@@ -4,8 +4,8 @@ val logback_version: String by project
 
 plugins {
     application
-    kotlin("jvm") version "1.6.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.6.0"
+    kotlin("jvm") version "1.6.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.6.20"
 }
 
 group = "mchechulnikov"
@@ -35,6 +35,10 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+//    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
     testImplementation("io.mockk:mockk:1.12.3")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
