@@ -1,10 +1,13 @@
-package mchechulnikov
+package eucalypt
 
+import eucalypt.host.Host
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import mchechulnikov.plugins.*
+import eucalypt.plugins.*
 
-fun main() {
+suspend fun main() {
+    Host.init()
+
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         configureRouting()
         configureHTTP()
