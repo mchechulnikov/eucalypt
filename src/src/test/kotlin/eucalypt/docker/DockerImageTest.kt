@@ -1,4 +1,4 @@
-package eucalypt.host
+package eucalypt.docker
 
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertDoesNotThrow

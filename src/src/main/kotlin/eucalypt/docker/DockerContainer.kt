@@ -1,4 +1,4 @@
-package eucalypt.host
+package eucalypt.docker
 
 import kotlinx.coroutines.coroutineScope
 import java.util.*

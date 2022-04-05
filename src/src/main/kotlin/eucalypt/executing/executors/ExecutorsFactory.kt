@@ -1,10 +1,10 @@
 package eucalypt.executing.executors
 
 import eucalypt.executing.ExecutorType
-import eucalypt.host.DockerContainer
-import eucalypt.host.DockerEventsFeed
-import eucalypt.host.DockerImage
-import eucalypt.host.Host
+import eucalypt.docker.DockerContainer
+import eucalypt.docker.DockerEventsFeed
+import eucalypt.docker.DockerImage
+import eucalypt.Host
 import java.util.*
 
 class ExecutorsFactory(

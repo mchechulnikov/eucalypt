@@ -1,4 +1,7 @@
-package eucalypt.host
+package eucalypt
+
+import eucalypt.docker.Docker
+import eucalypt.docker.DockerImage
 
 object Host {
     val images = mapOf(

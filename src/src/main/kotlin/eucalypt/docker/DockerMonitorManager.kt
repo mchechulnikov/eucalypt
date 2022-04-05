@@ -1,4 +1,4 @@
-package eucalypt.host
+package eucalypt.docker
 
 interface DockerMonitorManager {
     suspend fun start()

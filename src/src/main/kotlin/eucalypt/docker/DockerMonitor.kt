@@ -1,4 +1,4 @@
-package eucalypt.host
+package eucalypt.docker
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job

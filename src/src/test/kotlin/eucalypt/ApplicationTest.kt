@@ -1,5 +1,6 @@
 package eucalypt
 
+import eucalypt.ktor.plugins.configureRouting
 import io.ktor.http.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*

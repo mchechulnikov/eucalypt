@@ -1,7 +1,7 @@
 package eucalypt.executing.executors
 
 import eucalypt.executing.ExecutorType
-import eucalypt.host.DockerContainer
+import eucalypt.docker.DockerContainer
 
 internal class DotnetExecutor(
     type: ExecutorType,

@@ -1,4 +1,4 @@
-package eucalypt.host
+package eucalypt.docker
 
 data class DockerEvent(
     val container: String,

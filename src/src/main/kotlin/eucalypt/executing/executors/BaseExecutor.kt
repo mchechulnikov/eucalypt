@@ -2,7 +2,7 @@ package eucalypt.executing.executors
 
 import eucalypt.executing.ExecutorState
 import eucalypt.executing.ExecutorType
-import eucalypt.host.DockerContainer
+import eucalypt.docker.DockerContainer
 import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class BaseExecutor protected constructor(

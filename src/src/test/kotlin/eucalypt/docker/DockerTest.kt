@@ -1,4 +1,4 @@
-package eucalypt.host
+package eucalypt.docker
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
