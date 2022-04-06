@@ -1,20 +1,30 @@
 package eucalypt
 
-import io.ktor.http.*
-import kotlinx.serialization.*
+import eucalypt.docker.DockerMonitorManager
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.koin.core.context.startKoin
+import org.koin.java.KoinJavaComponent.inject
 import org.slf4j.event.Level
 
-suspend fun main() {
-    //Host.init()
+suspend fun main(): Unit = runBlocking {
+    startKoin { modules(compositionRoot) }
 
+    val dockerMonitorJob = launch { runDockerMonitor() }
+
+    runKtorServer()
+
+    dockerMonitorJob.cancel()
+}
+
+private fun CoroutineScope.runKtorServer() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         install(DefaultHeaders) {
             header("X-Engine", "Ktor") // will send this header with each response
@@ -24,37 +34,11 @@ suspend fun main() {
             filter { call -> call.request.path().startsWith("/") }
         }
         install(ContentNegotiation) { json() }
-
-        initRouting()
+        configureRouting()
     }.start(wait = true)
 }
 
-private fun Application.initRouting() {
-    routing {
-        get("/") {
-            call.respondText("Code executing server")
-        }
-
-        post("/dotnet") {
-            val script = call.receive<String>()
-            call.respondText(script, status = HttpStatusCode.OK)
-        }
-
-        post("/java") {
-            call.respondText(
-                "Java code isn't supported yet",
-                status = HttpStatusCode.NotAcceptable
-            )
-        }
-
-        post("/go") {
-            call.respondText(
-                "Go code isn't supported yet",
-                status = HttpStatusCode.NotAcceptable
-            )
-        }
-    }
+private suspend fun runDockerMonitor() {
+    val dockerMonitorManager : DockerMonitorManager by inject(DockerMonitorManager::class.java)
+    dockerMonitorManager.start()
 }
-
-@Serializable
-data class Customer(val id: String, val firstName: String, val lastName: String, val email: String)

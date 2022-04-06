@@ -1,16 +1,19 @@
 package eucalypt.executing
 
+import eucalypt.executing.executors.Executor
+import eucalypt.executing.executors.ExecutorType
+import eucalypt.executing.executors.ReservableExecutor
 import eucalypt.executing.pool.ExecutorsPool
 import kotlinx.coroutines.delay
 
-class ExecutorsManagerImpl (
-    private val config: ExecutorsManagerConfig,
+internal class ExecutorsManagerImpl (
+    private val settings: ExecutorsManagerSettings,
     private val pool: ExecutorsPool
 ) : ExecutorsManager {
     override suspend fun borrowExecutor(type: ExecutorType): Result<Executor> {
-        repeat(config.borrowAttemptsCount) {
+        repeat(settings.borrowAttemptsCount) {
             pool.getAvailableExecutor(type)
-                .onFailure { delay(config.borrowAttemptDelayMs) }
+                .onFailure { delay(settings.borrowAttemptDelayMs) }
                 .onSuccess {
                     if (it.tryReserve()) {
                         return Result.success(it)
@@ -21,6 +24,5 @@ class ExecutorsManagerImpl (
         return Result.failure(Error("Failed to borrow executor of type $type"))
     }
 
-    override fun redeemExecutor(executorID: String) =
-        pool.returnExecutor(executorID)
+    override fun redeemExecutor(executor: Executor) = (executor as ReservableExecutor).release()
 }

@@ -6,6 +6,12 @@ help:				# prints this help
 	@ echo Available targets are:
 	@ grep -h -E "^[^\#].+:\s+\#\s+.+$$" ./makefile
 
+build.images:
+	@ docker build \
+		-t eucalypt/executor:dotnet6 \
+		-f ./src/images/dotnet6/dockerfile \
+		./src/images/dotnet6
+
 local.root:			# GET /
 	@ curl -X GET $(BASE_URL)
 

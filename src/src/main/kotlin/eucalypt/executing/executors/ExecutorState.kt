@@ -1,4 +1,4 @@
-package eucalypt.executing
+package eucalypt.executing.executors
 
 enum class ExecutorState {
     NEW,

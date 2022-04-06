@@ -1,16 +1,17 @@
-package eucalypt
+package eucalypt.running
 
-import eucalypt.executing.ExecutorType
+import eucalypt.executing.executors.ExecutorType
 import eucalypt.executing.ExecutorsManager
+import eucalypt.executing.executors.ReservableExecutor
 
-class ScriptRunner(private val executorsManager: ExecutorsManager) {
-    suspend fun run(script: String, type: ScriptType): Result<String> {
+internal class ScriptRunnerImpl(private val executorsManager: ExecutorsManager) : ScriptRunner {
+    override suspend fun run(script: String, type: ScriptType): Result<String> {
         type
             .let(::getExecutorType)
             .let { executorsManager.borrowExecutor(it) }
             .onSuccess {
                 val executionResult = it.execute(script)
-                executorsManager.redeemExecutor(it.id)
+                executorsManager.redeemExecutor(it as ReservableExecutor)
 
                 return Result.success(executionResult)
             }
@@ -23,15 +24,9 @@ class ScriptRunner(private val executorsManager: ExecutorsManager) {
 
     private fun getExecutorType(type: ScriptType): ExecutorType {
         return when(type) {
-            ScriptType.DOTNET -> ExecutorType.DOTNET
+            ScriptType.DOTNET -> ExecutorType.DOTNET6
             ScriptType.JAVA -> ExecutorType.JAVA
             ScriptType.GO -> ExecutorType.GO
         }
     }
-}
-
-enum class ScriptType {
-    DOTNET,
-    JAVA,
-    GO
 }

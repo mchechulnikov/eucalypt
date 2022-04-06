@@ -1,13 +1,23 @@
 package eucalypt.executing.executors
 
-import eucalypt.executing.ExecutorType
 import eucalypt.docker.DockerContainer
+import eucalypt.docker.DockerImage
+import eucalypt.docker.DockerContainerSettings
 
 internal class DotnetExecutor(
     type: ExecutorType,
     dockerContainer: DockerContainer
 ) : BaseExecutor(type, dockerContainer) {
-    override fun buildCliCommand(script: String) =
-        // TODO build csproj and other staff like one command
-        "dotnet run --project ./eucalypt-runner.csproj $script"
+    // quotes are required for the script body to save multiline structure
+    override fun buildExecCommand(script: String) = "/app/entrypoint.sh \"$script\""
+
+    companion object {
+        val containerSettings = DockerContainerSettings(
+            image = DockerImage(imageName, "dotnet6").toString(),
+            memoryMB = 100,
+            cpus = 1.5,
+            isNetworkDisabled = true,
+            user = "csexec",
+        )
+    }
 }

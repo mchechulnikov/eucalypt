@@ -1,14 +1,12 @@
 package eucalypt.executing.executors
 
-import eucalypt.executing.ExecutorState
-import eucalypt.executing.ExecutorType
 import eucalypt.docker.DockerContainer
 import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class BaseExecutor protected constructor(
     override val type: ExecutorType,
     private val dockerContainer: DockerContainer
-) : PoolableExecutor {
+) : Poolable, ReservableExecutor, Executor {
     private var reservationTimestamp: Long = 0
     private val isReserved: AtomicBoolean = AtomicBoolean(false)
 
@@ -17,13 +15,17 @@ abstract class BaseExecutor protected constructor(
 
     override val id get() = dockerContainer.name
 
+    companion object {
+        const val imageName = "eucalypt/executor"
+    }
+
     override suspend fun execute(script: String): String {
         if (script.isBlank()) {
             throw IllegalArgumentException("Script is empty")
         }
 
         setState(ExecutorState.EXECUTING)
-        val command = buildCliCommand(script)
+        val command = buildExecCommand(script)
 
         return dockerContainer.exec(command)
     }
@@ -55,7 +57,7 @@ abstract class BaseExecutor protected constructor(
         isReserved.set(false)
     }
 
-    protected abstract fun buildCliCommand(script: String): String
+    protected abstract fun buildExecCommand(script: String): String
 
     private fun setState(state: ExecutorState) {
         this.currentState = state

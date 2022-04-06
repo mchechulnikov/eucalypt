@@ -1,8 +1,7 @@
-package eucalypt.executing.pool
-
-import eucalypt.executing.Executor
+package eucalypt.executing.executors
 
 interface ReservableExecutor : Executor {
     fun tryReserve(): Boolean
+    fun release()
 }
 

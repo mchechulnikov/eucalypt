@@ -11,12 +11,26 @@ internal object Docker {
         runDocker(arrayOf("pull", image))
     }
 
-    // TODO extract settings of run to config
     suspend fun runContainer(name: String, image: String) {
         runDocker(arrayOf("run", "-d", "-it", "-m=100", "--cpus=1.5", "--network", "none", "--name", name, image))
     }
 
+    suspend fun runContainer(name: String, settings: DockerContainerSettings) {
+        val args =
+            """
+                run -d -it
+                --name $name
+                --memory=${settings.memoryMB}m
+                --cpus=${settings.cpus}
+                --network ${if (settings.isNetworkDisabled) "none" else "bridge"}
+                -u ${settings.user}
+                ${settings.image}
+            """.trimIndent().replace('\n', ' ').split(" ").toTypedArray()
+        runDocker(args);
+    }
+
     suspend fun restartContainer(container: String) {
+        // -t 0 provides instant restart
         runDocker(arrayOf("restart", "-t", "0", container))
     }
 

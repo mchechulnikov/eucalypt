@@ -1,11 +1,10 @@
 package eucalypt.docker
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 
 internal class DockerEventsMonitor (
-    private val config: DockerEventMonitorConfig
+    private val settings: DockerEventMonitorSettings
 ): DockerMonitorManager, DockerEventsFeed {
     private var eventsChannel: Channel<String> = Channel(Channel.UNLIMITED)
     private var monitorJob: Job? = null
@@ -19,12 +18,12 @@ internal class DockerEventsMonitor (
         subscribers.remove(container)
     }
 
-    override suspend fun start() {
+    override suspend fun start(): Unit = coroutineScope {
         if (monitorJob != null) {
-            throw IllegalStateException("Docker monitor already started")
+            throw DockerMonitorException("Docker monitor already started")
         }
 
-        monitorJob = Docker.monitorEvents(config.containersPrefix, eventsChannel)
+        monitorJob = Docker.monitorEvents(settings.containersPrefix, eventsChannel)
         while (true) {
             val rawEvent = eventsChannel.receive()
             val event = parseEvent(rawEvent)
@@ -41,4 +40,6 @@ internal class DockerEventsMonitor (
     private fun parseEvent(event: String): DockerEvent =
         event.split(",").let { return DockerEvent(it[0], it[1]) }
 }
+
+class DockerMonitorException(message: String): Exception(message)
 

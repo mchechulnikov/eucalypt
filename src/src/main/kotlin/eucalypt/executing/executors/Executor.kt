@@ -1,7 +1,6 @@
-package eucalypt.executing
+package eucalypt.executing.executors
 
 interface Executor {
-    val id: String
     suspend fun execute(script: String): String
 }
 

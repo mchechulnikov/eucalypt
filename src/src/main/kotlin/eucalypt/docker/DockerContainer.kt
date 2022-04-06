@@ -1,13 +1,18 @@
 package eucalypt.docker
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
 import java.util.*
 
 class DockerContainer private constructor(
     val name: String,
+    private val
     private val eventsFeed: DockerEventsFeed
 ) {
     private var status: String = "unknown"
+    private var statusChangeChannel = Channel<String>(Channel.UNLIMITED)
 
     init {
         eventsFeed.subscribe(name) {
@@ -16,8 +21,13 @@ class DockerContainer private constructor(
     }
 
     companion object {
-        suspend fun run(name: String, image: DockerImage, eventsFeed: DockerEventsFeed): DockerContainer {
-            Docker.runContainer(name, image.toString())
+        suspend fun run(
+            name: String,
+            settings: DockerContainerSettings,
+            eventsFeed: DockerEventsFeed
+        ): DockerContainer {
+            Docker.runContainer(name, settings)
+
             return DockerContainer(name, eventsFeed)
         }
     }
@@ -50,4 +60,9 @@ class DockerContainer private constructor(
         }
 
     override fun toString(): String = name
+}
+
+
+fun CoroutineScope.filter(numbers: ReceiveChannel<Int>, prime: Int) = produce<Int> {
+    for (x in numbers) if (x % prime != 0) send(x)
 }

@@ -1,9 +1,6 @@
 package eucalypt.executing.pool
 
-import eucalypt.executing.ExecutorState
-import eucalypt.executing.ExecutorType
-import eucalypt.executing.executors.ExecutorsFactory
-import eucalypt.executing.executors.PoolableExecutor
+import eucalypt.executing.executors.*
 import eucalypt.utils.every
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -11,73 +8,79 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class ExecutorsPoolImpl(
-    private val config: ExecutorPoolConfig,
+    private val settings: ExecutorsPoolSettings,
     private val executorsFactory: ExecutorsFactory,
 ) : ExecutorsPool {
-    private val executors = mutableMapOf<String, PoolableExecutor>()
+    private val executors = mutableMapOf<String, Poolable>()
 
     suspend fun start() {
-        config.types.forEach { addNewExecutor(it) }
+        settings.types.forEach { addNewExecutor(it) }
         runServing()
     }
 
     override suspend fun getAvailableExecutor(type: ExecutorType): Result<ReservableExecutor> {
-        // try to get ready executor from pool
         val executor = getReadyExecutorOrNull(type)
         if (executor != null) {
-            return Result.success(executor)
+            return Result.success(executor as ReservableExecutor)
         }
 
         // try to extend pool
-        if (executors.size > config.maxSize) {
+        if (executors.size > settings.maxSize) {
             return Result.failure(Error("Pool size exceeded"))
         }
 
+        // first create one executor and wait for readiness
         val newExecutor = addNewExecutor(type)
+        val isExecutorReady = runBlocking { waitReadiness(newExecutor) }
+        if (!isExecutorReady) {
+            throw ExecutorsPoolException("There are no ready executors but pool isn't exceeded. Has pool been started?")
+        }
 
+        // then run background extension if needed
         coroutineScope {
             launch { extendIfNeeded(type) }
         }
 
-        return Result.success(newExecutor)
+        return Result.success(newExecutor as ReservableExecutor)
     }
 
-    override fun returnExecutor(executorID: String) {
-        if (executorID.isBlank())
-            throw IllegalArgumentException("Executor ID cannot be empty")
-        if (executorID !in executors.keys)
-            throw IllegalArgumentException("Executor with id $executorID not found")
-
-        executors[executorID]?.release()
-    }
-
-    private suspend fun addNewExecutor(type: ExecutorType): PoolableExecutor {
+    private suspend fun addNewExecutor(type: ExecutorType): Poolable {
         val executor = executorsFactory.create(type)
         executors[executor.id] = executor
-
-        runBlocking {
-            while (!executor.currentState.isReady) {
-                delay(config.readinessProbeIntervalMs)
-            }
-        }
-
         return executor
     }
 
+    private suspend fun waitReadiness(executor: Poolable): Boolean {
+        var attempts = 0
+        while (true) {
+            if (executor.currentState.isReady) {
+                return true
+            }
+
+            delay(settings.readinessProbeIntervalMs)
+            if (attempts > settings.maxReadinessProbeAttempts) {
+                break
+            }
+            attempts++
+        }
+
+        return false
+    }
+
     private suspend fun runServing() = coroutineScope {
-        launch { every(config.shrinkIntervalMs, ::shrinkIfNeeded) }
-        launch { every(config.detectHangedIntervalMs, ::detectHanged) }
+        launch { every(settings.shrinkIntervalMs, ::shrinkIfNeeded) }
+        launch { every(settings.detectHangedIntervalMs, ::detectHanged) }
     }
 
     private suspend fun extendIfNeeded(type: ExecutorType) {
         val readyExecutors = executors.values.filter { it.type == type }
-        if (readyExecutors.size >= config.minReadyExecutorsSize) {
+        if (readyExecutors.size >= settings.minReadyExecutorsCount) {
             return
         }
 
         val addCount =
-            if (executors.size * 2 > config.maxSize)
-                config.maxSize - executors.size
+            if (executors.size * 2 > settings.maxSize)
+                settings.maxSize - executors.size
             else executors.size * 2
 
         // TODO we can do one operation for all executors by time
@@ -85,11 +88,11 @@ class ExecutorsPoolImpl(
     }
 
     private suspend fun shrinkIfNeeded() = coroutineScope {
-        for (type in config.types) {
+        for (type in settings.types) {
             val readyExecutors = executors.values
                 .filter { it.currentState.isReady && it.type == type }
 
-            if (readyExecutors.size <= config.minReadyExecutorsSize * 2) {
+            if (readyExecutors.size <= settings.minReadyExecutorsCount * 2) {
                 continue
             }
 
@@ -106,8 +109,8 @@ class ExecutorsPoolImpl(
     private suspend fun detectHanged() {
         val currentTimeMs = System.currentTimeMillis()
 
-        fun isTimeoutHappened(executor: PoolableExecutor) =
-            executor.stateTimestamp + config.executionTimeoutMs < currentTimeMs
+        fun isTimeoutHappened(executor: Poolable) =
+            executor.stateTimestamp + settings.executionTimeoutMs < currentTimeMs
 
         val hangedExecutors = executors.values
             .filter { it.currentState.isTimeoutable && isTimeoutHappened(it) }
@@ -120,6 +123,6 @@ class ExecutorsPoolImpl(
         }
     }
 
-    private fun getReadyExecutorOrNull(type: ExecutorType): PoolableExecutor? =
+    private fun getReadyExecutorOrNull(type: ExecutorType): Poolable? =
         executors.values.firstOrNull { it.type == type && it.currentState == ExecutorState.READY }
 }
