@@ -11,12 +11,13 @@ internal object Docker {
         runDocker(arrayOf("pull", image))
     }
 
+    // TODO extract settings of run to config
     suspend fun runContainer(name: String, image: String) {
-        runDocker(arrayOf("run", "-d", "-it", "--name", name, image))
+        runDocker(arrayOf("run", "-d", "-it", "-m=100", "--cpus=1.5", "--network", "none", "--name", name, image))
     }
 
     suspend fun restartContainer(container: String) {
-        runDocker(arrayOf("restart", container))
+        runDocker(arrayOf("restart", "-t", "0", container))
     }
 
     suspend fun removeContainer(container: String) {

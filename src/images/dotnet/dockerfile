@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:6.0
+
+WORKDIR /app
+
+COPY ./entrypoint.sh .
+RUN chmod +x ./entrypoint.sh
+
+
+COPY ./Main.csproj .
+RUN dotnet restore
+
+RUN adduser --system --home /app --uid 1000 csexec
+RUN chown -R csexec /app
+
+USER csexec

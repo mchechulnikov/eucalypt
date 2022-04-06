@@ -25,31 +25,35 @@ suspend fun main() {
         }
         install(ContentNegotiation) { json() }
 
-        routing {
-            get("/") {
-                call.respondText("Code executing server")
-            }
-
-            post("/dotnet") {
-                val script = call.receive<String>()
-                call.respondText(script, status = HttpStatusCode.OK)
-            }
-
-            post("/java") {
-                call.respondText(
-                    "Java code isn't supported yet",
-                    status = HttpStatusCode.NotAcceptable
-                )
-            }
-
-            post("/go") {
-                call.respondText(
-                    "Go code isn't supported yet",
-                    status = HttpStatusCode.NotAcceptable
-                )
-            }
-        }
+        initRouting()
     }.start(wait = true)
+}
+
+private fun Application.initRouting() {
+    routing {
+        get("/") {
+            call.respondText("Code executing server")
+        }
+
+        post("/dotnet") {
+            val script = call.receive<String>()
+            call.respondText(script, status = HttpStatusCode.OK)
+        }
+
+        post("/java") {
+            call.respondText(
+                "Java code isn't supported yet",
+                status = HttpStatusCode.NotAcceptable
+            )
+        }
+
+        post("/go") {
+            call.respondText(
+                "Go code isn't supported yet",
+                status = HttpStatusCode.NotAcceptable
+            )
+        }
+    }
 }
 
 @Serializable
