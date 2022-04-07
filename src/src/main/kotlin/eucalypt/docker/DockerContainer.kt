@@ -2,11 +2,10 @@ package eucalypt.docker
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.coroutineScope
-import java.util.*
 
 class DockerContainer private constructor(
     val name: String,
+    private val settings: DockerContainerSettings,
     private val eventsFeed: DockerEventsFeed
 ) {
     private var currentState: DockerContainerState = DockerContainerState.UNKNOWN
@@ -21,7 +20,7 @@ class DockerContainer private constructor(
             settings: DockerContainerSettings,
             eventsFeed: DockerEventsFeed
         ): DockerContainer {
-            val container = DockerContainer(name, eventsFeed)
+            val container = DockerContainer(name, settings, eventsFeed)
             eventsFeed.subscribe(name) { container.handleEvent(it) }
 
             Docker.runContainer(name, settings)
@@ -32,7 +31,10 @@ class DockerContainer private constructor(
 
     suspend fun exec(command: String, argument: String) = Docker.exec(name, command, argument)
 
-    suspend fun restart() = Docker.restartContainer(name)
+    suspend fun rerun() {
+        Docker.removeContainer(name)
+        Docker.runContainer(name, settings)
+    }
 
     suspend fun remove() {
         Docker.removeContainer(name)

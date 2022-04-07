@@ -5,7 +5,6 @@ import eucalypt.docker.DockerContainerState
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.consumeEach
 import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class BaseExecutor protected constructor(
@@ -62,7 +61,7 @@ abstract class BaseExecutor protected constructor(
 
     override suspend fun reset() {
         setState(ExecutorState.RESET)
-        dockerContainer.restart()
+        dockerContainer.rerun()
     }
 
     override suspend fun eliminate() {

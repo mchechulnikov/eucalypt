@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace ConsoleApplication
 {
@@ -6,7 +7,7 @@ namespace ConsoleApplication
     {
         public static void Main(string[] args)
         {
-            white(true) {
+            while(true) {
                 Console.WriteLine("Running...");
                 Thread.Sleep(3000);
             }
