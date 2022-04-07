@@ -6,5 +6,5 @@ import eucalypt.executing.executors.ReservableExecutor
 
 interface ExecutorsManager {
     suspend fun borrowExecutor(type: ExecutorType): Result<Executor>
-    fun redeemExecutor(executor: Executor)
+    suspend fun redeemExecutor(executor: Executor)
 }

@@ -21,10 +21,9 @@ fun Application.configureRouting() {
         post("/dotnet") {
             val script = call.receive<String>()
 
-            scriptRunner
-                .run(script, ScriptType.DOTNET)
+            scriptRunner.run(script, ScriptType.DOTNET)
                 .onSuccess {
-                    call.respondText(script, status = HttpStatusCode.OK)
+                    call.respondText(it, status = HttpStatusCode.OK)
                 }
                 .onFailure {
                     call.respondText(

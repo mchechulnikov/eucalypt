@@ -24,5 +24,6 @@ internal class ExecutorsManagerImpl (
         return Result.failure(Error("Failed to borrow executor of type $type"))
     }
 
-    override fun redeemExecutor(executor: Executor) = (executor as ReservableExecutor).release()
+    override suspend fun redeemExecutor(executor: Executor) =
+        (executor as ReservableExecutor).release()
 }

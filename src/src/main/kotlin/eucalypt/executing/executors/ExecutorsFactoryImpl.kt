@@ -5,32 +5,29 @@ import eucalypt.docker.DockerEventsFeed
 import java.util.*
 
 internal class ExecutorsFactoryImpl(
-    private val settings: ExecutorsFactorySettings,
     private val dockerEventsFeed: DockerEventsFeed
 ) : ExecutorsFactory {
-    override suspend fun create(type: ExecutorType): BaseExecutor {
-        return when (type) {
+    override suspend fun create(namePrefix: String, type: ExecutorType): BaseExecutor {
+        val containerName = getNewContainerName(namePrefix, type)
+
+        val executor = when (type) {
             ExecutorType.DOTNET6 -> {
-                DotnetExecutor(
-                    type,
-                    DockerContainer.run(
-                        name = getNewContainerName(type),
-                        settings = DotnetExecutor.containerSettings,
-                        eventsFeed = dockerEventsFeed
-                    )
-                )
+                val dockerContainer = DockerContainer.run(containerName, DotnetExecutor.containerSettings, dockerEventsFeed)
+                DotnetExecutor(type, dockerContainer)
             }
             else -> throw NotImplementedError("Executor $type is not implemented yet")
         }
+
+        executor.init()
+
+        return executor
     }
 
-    private fun getNewContainerName(type: ExecutorType): String {
-        val prefix = settings.containersPrefix
-        val factoryID = settings.factoryID
+    private fun getNewContainerName(namePrefix: String, type: ExecutorType): String {
         val typeName = type.name.lowercase(Locale.getDefault())
         val id = UUID.randomUUID().toString().substring(0, 8)
 
-        return "$prefix-$factoryID-$typeName-$id"
+        return "$namePrefix-$typeName-$id"
     }
 }
 

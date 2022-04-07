@@ -1,5 +1,6 @@
 package eucalypt.docker
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -127,7 +128,7 @@ internal class DockerTest {
         val containerName = runContainer()
 
         // act
-        val result = Docker.exec(containerName, "pwd")
+        val result = Docker.exec(containerName, "ls", "")
 
         // assert
         assertEquals("/\n", result)

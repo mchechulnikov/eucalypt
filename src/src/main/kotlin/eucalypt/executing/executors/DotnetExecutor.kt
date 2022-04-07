@@ -9,7 +9,12 @@ internal class DotnetExecutor(
     dockerContainer: DockerContainer
 ) : BaseExecutor(type, dockerContainer) {
     // quotes are required for the script body to save multiline structure
-    override fun buildExecCommand(script: String) = "/app/entrypoint.sh \"$script\""
+    override fun buildExecCommand(script: String): Pair<String, String> {
+        val escapedScript = script
+            .replace("\"", "\\\"")
+            .replace("\'", "\\\'")
+        return "/app/entrypoint.sh" to script
+    }
 
     companion object {
         val containerSettings = DockerContainerSettings(

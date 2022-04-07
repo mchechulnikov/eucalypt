@@ -38,8 +38,8 @@ internal object Docker {
         runDocker(arrayOf("rm", "-f", container))
     }
 
-    suspend fun exec(container: String, command: String): String {
-        return runDocker(arrayOf("exec", container, command))
+    suspend fun exec(container: String, cmd1: String, cmd2: String): String {
+        return runCmdIgnoringError("docker", (arrayOf("exec", container, cmd1, cmd2)))
     }
 
     fun monitorEvents(containerNamePrefix: String, eventsChannel: Channel<String>): Job {
@@ -47,15 +47,26 @@ internal object Docker {
             arrayOf(
                 "events",
                 "--filter", "container=$containerNamePrefix",
+                "--filter", "event=restart",
+                "--filter", "event=create",
+                "--filter", "event=start",
+//                "--filter", "event=pause",
+//                "--filter", "event=unpause",
+//                "--filter", "event=kill",
+//                "--filter", "event=die",
+//                "--filter", "event=oom",
+//                "--filter", "event=stop",
+//                "--filter", "event=rename",
+//                "--filter", "event=destroy",
                 "--format", "{{.Actor.Attributes.name}},{{.Status}}",
                 "--since", System.currentTimeMillis().toString(),
             )
-        return readStream("docker", args, eventsChannel)
+        return readStreamByLines("docker", args, eventsChannel)
     }
 
     private suspend fun runDocker(args: Array<String>) = runCmd("docker", args)
 
-    private fun runCmd(cmd: String, args: Array<String>): String = runBlocking(Dispatchers.IO) {
+    private suspend fun runCmd(cmd: String, args: Array<String>): String = withContext(Dispatchers.IO) {
         val process = ProcessBuilder(cmd, *args).start()
         val stdout = process.inputStream.bufferedReader().readText()
         val stderr = process.errorStream.bufferedReader().readText()
@@ -63,13 +74,24 @@ internal object Docker {
         process.waitFor()
 
         if (process.exitValue() != 0) {
-            throw DockerException("Process '$cmd' failed with exit code ${process.exitValue()}\n$stderr")
+            throw DockerException("Process '$cmd' failed with exit code ${process.exitValue()}\n$stderr\n$stdout")
         }
 
         stdout
     }
 
-    private fun readStream(cmd: String, args: Array<String>, channel: Channel<String>): Job {
+    private suspend fun runCmdIgnoringError(cmd: String, args: Array<String>): String = withContext(Dispatchers.IO) {
+        val builder = ProcessBuilder(cmd, *args)
+        builder.redirectErrorStream(true)
+        val process = builder.start()
+        val stdout = process.inputStream.bufferedReader().readText()
+
+        process.waitFor()
+
+        stdout
+    }
+
+    private fun readStreamByLines(cmd: String, args: Array<String>, channel: Channel<String>): Job {
         val builder = ProcessBuilder(cmd, *args)
         builder.redirectErrorStream(true) // so we can ignore the error stream
 

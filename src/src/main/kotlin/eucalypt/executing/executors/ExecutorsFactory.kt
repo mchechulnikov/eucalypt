@@ -1,5 +1,5 @@
 package eucalypt.executing.executors
 
 interface ExecutorsFactory {
-    suspend fun create(type: ExecutorType): BaseExecutor
+    suspend fun create(namePrefix: String, type: ExecutorType): BaseExecutor
 }

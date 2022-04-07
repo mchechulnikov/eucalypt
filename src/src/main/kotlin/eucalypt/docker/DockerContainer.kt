@@ -1,6 +1,5 @@
 package eucalypt.docker
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
@@ -8,17 +7,13 @@ import java.util.*
 
 class DockerContainer private constructor(
     val name: String,
-    private val
     private val eventsFeed: DockerEventsFeed
 ) {
-    private var status: String = "unknown"
-    private var statusChangeChannel = Channel<String>(Channel.UNLIMITED)
+    private var currentState: DockerContainerState = DockerContainerState.UNKNOWN
+    private val stateChangeChannel = Channel<DockerContainerState>(Channel.UNLIMITED)
 
-    init {
-        eventsFeed.subscribe(name) {
-            status = it.status.lowercase(Locale.getDefault())
-        }
-    }
+    val stateChannel: ReceiveChannel<DockerContainerState>
+        get() = stateChangeChannel
 
     companion object {
         suspend fun run(
@@ -26,43 +21,55 @@ class DockerContainer private constructor(
             settings: DockerContainerSettings,
             eventsFeed: DockerEventsFeed
         ): DockerContainer {
+            val container = DockerContainer(name, eventsFeed)
+            eventsFeed.subscribe(name) { container.handleEvent(it) }
+
             Docker.runContainer(name, settings)
 
-            return DockerContainer(name, eventsFeed)
+            return container
         }
     }
 
-    suspend fun exec(command: String) = Docker.exec(name, command)
+    suspend fun exec(command: String, argument: String) = Docker.exec(name, command, argument)
 
-    suspend fun restart() = coroutineScope {
-        Docker.restartContainer(name)
-    }
+    suspend fun restart() = Docker.restartContainer(name)
 
     suspend fun remove() {
         Docker.removeContainer(name)
         eventsFeed.unsubscribe(name)
-        status = "removed"
+        stateChangeChannel.cancel()
+        currentState = DockerContainerState.REMOVED
     }
 
-    fun isReady(): Boolean =
-        when (status) {
-            "running" -> true
-            else -> false
-        }
-
-    fun needRestart(): Boolean =
-        when (status) {
-            "pause" -> true
-            "exited" -> true
-            "killed" -> true
-            "die" -> true
-            else -> false
-        }
-
     override fun toString(): String = name
+
+    private suspend fun handleEvent(event: DockerEvent) {
+        val supposedState = when (event.status) {
+            "create" -> DockerContainerState.NOT_READY
+            "start" -> DockerContainerState.READY
+            "restart" -> DockerContainerState.READY
+            "unpause" -> DockerContainerState.READY
+            "pause" -> DockerContainerState.NEED_RESTART
+            "kill" -> DockerContainerState.NEED_RESTART
+            "die" -> DockerContainerState.NEED_RESTART
+            "oom" -> DockerContainerState.NEED_RESTART
+            "stop" -> DockerContainerState.NEED_RESTART
+            "rename" -> DockerContainerState.NEED_RESTART
+            "destroy" -> DockerContainerState.REMOVED
+            else -> DockerContainerState.UNKNOWN
+        }
+
+        if (supposedState != DockerContainerState.UNKNOWN) {
+            currentState = supposedState
+            stateChangeChannel.send(currentState)
+        }
+    }
 }
 
-
-fun CoroutineScope.filter(numbers: ReceiveChannel<Int>, prime: Int) = produce<Int> {
-    for (x in numbers) if (x % prime != 0) send(x)
+enum class DockerContainerState {
+    UNKNOWN,
+    NOT_READY,
+    READY,
+    NEED_RESTART,
+    REMOVED,
 }
