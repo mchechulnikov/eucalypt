@@ -12,13 +12,13 @@ namespace ConsoleApplication
                 "First line", "Second line", "Third line" 
             };
 
-            var filePath = "test.txt"
+            var filePath = "test.txt";
 
             WriteToFile(filePath, lines);
-            Console.WriteLine(@"Lines has been written to file {filePath}");
+            Console.WriteLine($"Lines has been written to file {filePath}");
 
-            ReadFromFile(filePath)
-            Console.WriteLine(@"Lines has been read from file {filePath}");
+            ReadFromFile(filePath);
+            Console.WriteLine($"Lines has been read from file {filePath}");
         }
 
         public static void WriteToFile(string filePath, string[] lines)
