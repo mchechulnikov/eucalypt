@@ -48,12 +48,13 @@ class ExecutorsPoolImpl(
     override suspend fun stop() {
         logger.info("Stopping executors pool '${settings.name}'")
 
+
+        // TODO remove all in batch
+        executors.values.forEach { it.eliminate() }
+        val executorsIds = executors.values.map { it.id }
+        executorsIds.forEach { executors.remove(it) }
+
         servingScope.cancel()
-        executors.values.forEach {
-            // TODO remove all in batch
-            it.eliminate()
-            executors.remove(it.id)
-        }
 
         logger.info("Executors pool '${settings.name}' stopped")
     }

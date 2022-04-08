@@ -84,7 +84,7 @@ abstract class BaseExecutor protected constructor(
         this.currentState = state
         this.stateTimestamp = System.currentTimeMillis()
 
-        logger.info("Executor '$id' state changed from $oldState to $state")
+        logger.info("Executor '$id' state changed $oldState -> $state")
     }
 
     private suspend fun applyDockerState(state: DockerContainerState) = coroutineScope {

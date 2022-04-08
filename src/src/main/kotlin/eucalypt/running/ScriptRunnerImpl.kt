@@ -52,7 +52,7 @@ internal class ScriptRunnerImpl(
         durationMs: Long,
         isTimeoutExceeded: Boolean
     ) = buildString {
-            appendLine("> Executing script on ${executor.typeName}")
+            appendLine("> Executing on ${executor.typeName}")
             appendLine("> Command: ${executor.executingBy}")
             if (!output.isEmpty) appendLine("> Output:\n")
             else appendLine("> No output")

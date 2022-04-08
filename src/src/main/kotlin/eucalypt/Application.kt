@@ -8,32 +8,31 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.koin.core.context.startKoin
 import org.koin.java.KoinJavaComponent.inject
 import org.slf4j.event.Level
+import java.util.concurrent.TimeUnit
 
 suspend fun main() = coroutineScope {
+    // DI
     startKoin { modules(compositionRoot) }
 
     val dockerMonitorManager : DockerMonitorManager by inject(DockerMonitorManager::class.java)
     val pool : ExecutorsPoolManager by inject(ExecutorsPoolManager::class.java)
 
+    // before
     launch { dockerMonitorManager.start() }
     launch { pool.start() }
 
     runKtorServer {
         // on shutdown
-        runBlocking {
-            dockerMonitorManager.stop()
-            pool.stop()
-        }
+        dockerMonitorManager.stop()
+        pool.stop()
     }
 }
 
-private fun runKtorServer(after: () -> Unit) {
+private fun runKtorServer(onShutdown: suspend () -> Unit) {
     // run server
     val server = embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         install(DefaultHeaders)
@@ -44,14 +43,24 @@ private fun runKtorServer(after: () -> Unit) {
 
         install(ContentNegotiation) { json() }
 
-        // for graceful shutdown
+        // for graceful shutdown by HTTP request
         install(ShutDownUrl.ApplicationCallPlugin) {
             shutDownUrl = "/shutdown"
-            exitCodeSupplier = { after(); 0 }
+            exitCodeSupplier = {
+                runBlocking { onShutdown() }
+                0
+            }
         }
 
         configureRouting()
     }
 
-    server.start(wait = true)
+    server.start(wait = false)
+
+    // for graceful shutdown by SIGTERM
+    Runtime.getRuntime().addShutdownHook(Thread {
+        runBlocking { onShutdown() }
+        server.stop(1, 3, TimeUnit.SECONDS)
+    })
+    Thread.currentThread().join()
 }
