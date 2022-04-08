@@ -1,6 +1,11 @@
 package eucalypt.executing.executors
 
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ReceiveChannel
+
 interface Executor {
-    suspend fun execute(script: String): String
+    val typeName: String
+    val executingBy: String
+    suspend fun execute(script: String): Pair<Job, ReceiveChannel<String>>
 }
 

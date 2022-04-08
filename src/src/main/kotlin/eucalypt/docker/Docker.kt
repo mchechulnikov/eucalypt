@@ -1,6 +1,7 @@
 package eucalypt.docker
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 
 internal object Docker {
@@ -38,8 +39,10 @@ internal object Docker {
         runDocker(arrayOf("rm", "-f", container))
     }
 
-    suspend fun exec(container: String, cmd1: String, cmd2: String): String {
-        return runCmdIgnoringError("docker", (arrayOf("exec", container, cmd1, cmd2)))
+    fun exec(container: String, cmd1: String, cmd2: String): Pair<Job, Channel<String>> {
+        val channel = Channel<String>(100, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+        val args = arrayOf("exec", container, cmd1, cmd2)
+        return readStreamByLines("docker", args, channel) to channel
     }
 
     fun monitorEvents(containerNamePrefix: String, eventsChannel: Channel<String>): Job {

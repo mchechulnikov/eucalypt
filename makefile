@@ -15,7 +15,7 @@ build.images:
 docker.events:			# show docker events to check situation
 	@ docker events --format "{{.Actor.Attributes.name}},{{.Status}}" --filter 'container=eucalypt-executor-main' 
 
-local.root:			# GET /
+local.root:			# GET /			<-- default root result
 	@ curl -X GET $(BASE_URL)
 
 local.dotnet.hw:		# POST /dotnet		<-- BODY: ./examples/hello-world.cs
@@ -31,6 +31,11 @@ local.dotnet.inf:		# POST /dotnet		<-- BODY: ./examples/infinite-operation.cs
 local.dotnet.inv:		# POST /dotnet		<-- BODY: ./examples/invalid.cs
 	@ curl -X POST \
 		--data-binary @./examples/invalid.cs \
+		$(BASE_URL)/dotnet
+
+local.dotnet.no:		# POST /dotnet		<-- BODY: ./examples/no-output.cs
+	@ curl -X POST \
+		--data-binary @./examples/no-output.cs \
 		$(BASE_URL)/dotnet
 
 local.java.hw:			# POST /java		<-- not supported yet example

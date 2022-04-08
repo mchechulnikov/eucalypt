@@ -10,7 +10,7 @@ interface ExecutorsPoolSettings {
     val shrinkIntervalMs: Long
     val readinessProbeIntervalMs: Long
     val maxReadinessProbeAttempts: Int
-    val executionTimeoutMs: Long
+    val hangingTimeoutMs: Long
     val types: List<ExecutorType>
 }
 

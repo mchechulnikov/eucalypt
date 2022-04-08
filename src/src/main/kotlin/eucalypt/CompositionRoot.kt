@@ -15,10 +15,12 @@ import eucalypt.executing.pool.ExecutorsPoolManager
 import eucalypt.executing.pool.ExecutorsPoolSettings
 import eucalypt.running.ScriptRunner
 import eucalypt.running.ScriptRunnerImpl
+import eucalypt.running.ScriptRunnerSettings
 import org.koin.dsl.binds
 import org.koin.dsl.module
 
 val compositionRoot = module {
+    factory<ScriptRunnerSettings> { Config.ScriptRunnerConfig }
     factory<DockerEventMonitorSettings> { Config.DockerEventMonitorConfig }
     factory<ExecutorsPoolSettings> { Config.ExecutorsPoolConfig }
     factory<ExecutorsManagerSettings> { Config.ExecutorsManagerConfig }
@@ -29,5 +31,5 @@ val compositionRoot = module {
     single<ExecutorsFactory> { ExecutorsFactoryImpl(get()) }
     single<ExecutorsManager> { ExecutorsManagerImpl(get(), get()) }
 
-    single<ScriptRunner> { ScriptRunnerImpl(get()) }
+    single<ScriptRunner> { ScriptRunnerImpl(get(), get()) }
 }

@@ -37,7 +37,7 @@ abstract class BaseExecutor protected constructor(
         }
     }
 
-    override suspend fun execute(script: String): String {
+    override suspend fun execute(script: String): Pair<Job, ReceiveChannel<String>> {
         if (script.isBlank()) {
             throw IllegalArgumentException("Script is empty")
         }
@@ -71,8 +71,7 @@ abstract class BaseExecutor protected constructor(
 
     override suspend fun release() {
         setState(ExecutorState.RELEASED)
-        reservationTimestamp = 0
-        isReserved.set(false)
+        unreserve()
 
         scope.launch { reset() }
     }
@@ -85,9 +84,20 @@ abstract class BaseExecutor protected constructor(
     }
 
     private suspend fun applyDockerState(state: DockerContainerState) = coroutineScope {
-        if (state == DockerContainerState.READY) {
-            setState(ExecutorState.READY)
-            readinessChannel.send(true)
+        if (state != DockerContainerState.READY) {
+            return@coroutineScope
         }
+
+        if (isReserved.get()) {
+            unreserve()
+        }
+
+        setState(ExecutorState.READY)
+        readinessChannel.send(true)
+    }
+
+    private fun unreserve() {
+        reservationTimestamp = 0
+        isReserved.set(false)
     }
 }

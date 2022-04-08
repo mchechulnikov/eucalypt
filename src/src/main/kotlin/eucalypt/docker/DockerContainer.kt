@@ -29,7 +29,7 @@ class DockerContainer private constructor(
         }
     }
 
-    suspend fun exec(command: String, argument: String) = Docker.exec(name, command, argument)
+    fun exec(command: String, argument: String) = Docker.exec(name, command, argument)
 
     suspend fun rerun() {
         Docker.removeContainer(name)
@@ -49,8 +49,8 @@ class DockerContainer private constructor(
         val supposedState = when (event.status) {
             "create" -> DockerContainerState.NOT_READY
             "start" -> DockerContainerState.READY
-            "restart" -> DockerContainerState.READY
-            "unpause" -> DockerContainerState.READY
+            "unpause" -> DockerContainerState.NEED_RESTART
+            "restart" -> DockerContainerState.NEED_RESTART
             "pause" -> DockerContainerState.NEED_RESTART
             "kill" -> DockerContainerState.NEED_RESTART
             "die" -> DockerContainerState.NEED_RESTART

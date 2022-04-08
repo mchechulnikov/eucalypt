@@ -54,23 +54,6 @@ class ExecutorsPoolImpl(
         return executor
     }
 
-//    private suspend fun waitReadiness(executor: Poolable): Boolean {
-//        var attempts = 0
-//        while (true) {
-//            if (executor.currentState.isReady) {
-//                return true
-//            }
-//
-//            delay(settings.readinessProbeIntervalMs)
-//            if (attempts > settings.maxReadinessProbeAttempts) {
-//                break
-//            }
-//            attempts++
-//        }
-//
-//        return false
-//    }
-
     private suspend fun runServing() = coroutineScope {
         launch { every(settings.shrinkIntervalMs, ::shrinkIfNeeded) }
         launch { every(settings.detectHangedIntervalMs, ::detectHanged) }
@@ -116,7 +99,7 @@ class ExecutorsPoolImpl(
         val currentTimeMs = System.currentTimeMillis()
 
         fun isTimeoutHappened(executor: Poolable) =
-            executor.stateTimestamp + settings.executionTimeoutMs < currentTimeMs
+            executor.stateTimestamp + settings.hangingTimeoutMs < currentTimeMs
 
         val hangedExecutors = executors.values
             .filter { it.currentState.isTimeoutable && isTimeoutHappened(it) }

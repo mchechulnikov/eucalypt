@@ -12,5 +12,5 @@ enum class ExecutorState {
     val isReady get() = this == READY
 
     val isTimeoutable get(): Boolean =
-        this == RESERVED || this == EXECUTING  || this == RELEASED
+        this == RESERVED || this == EXECUTING  || this == RELEASED || this == RESET
 }

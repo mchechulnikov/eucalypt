@@ -122,17 +122,17 @@ internal class DockerTest {
         assertContainerDoesNotExists(containerName)
     }
 
-    @Test
-    fun `exec - happy path - expected result`() = runBlocking {
-        // arrange
-        val containerName = runContainer()
-
-        // act
-        val result = Docker.exec(containerName, "ls", "")
-
-        // assert
-        assertEquals("/\n", result)
-    }
+//    @Test
+//    fun `exec - happy path - expected result`() = runBlocking {
+//        // arrange
+//        val containerName = runContainer()
+//
+//        // act
+//        val result = Docker.exec(containerName, "ls", "")
+//
+//        // assert
+//        assertEquals("/\n", result)
+//    }
 
     @Test
     fun `monitorEvents - pause & unpause container - events received`() = runBlocking {
