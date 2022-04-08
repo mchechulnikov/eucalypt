@@ -8,11 +8,12 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.context.startKoin
 import org.koin.java.KoinJavaComponent.inject
 import org.slf4j.event.Level
-import java.util.concurrent.TimeUnit
 
 suspend fun main() = coroutineScope {
     startKoin { modules(compositionRoot) }
@@ -25,7 +26,7 @@ suspend fun main() = coroutineScope {
 
     runKtorServer {
         // on shutdown
-        CoroutineScope(coroutineContext).launch {
+        runBlocking {
             dockerMonitorManager.stop()
             pool.stop()
         }
@@ -35,23 +36,22 @@ suspend fun main() = coroutineScope {
 private fun runKtorServer(after: () -> Unit) {
     // run server
     val server = embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
-        install(DefaultHeaders) {
-            header("X-Engine", "Ktor") // will send this header with each response
-        }
+        install(DefaultHeaders)
         install(CallLogging) {
             level = Level.INFO
             filter { call -> call.request.path().startsWith("/") }
         }
+
         install(ContentNegotiation) { json() }
+
+        // for graceful shutdown
+        install(ShutDownUrl.ApplicationCallPlugin) {
+            shutDownUrl = "/shutdown"
+            exitCodeSupplier = { after(); 0 }
+        }
+
         configureRouting()
     }
 
     server.start(wait = true)
-
-    // graceful shutdown
-    Runtime.getRuntime().addShutdownHook(Thread {
-        after()
-        server.stop(1, 5, TimeUnit.SECONDS)
-    })
-    Thread.currentThread().join()
 }

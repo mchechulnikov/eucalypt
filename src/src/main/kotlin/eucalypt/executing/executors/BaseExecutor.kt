@@ -5,11 +5,13 @@ import eucalypt.docker.DockerContainerState
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import org.slf4j.Logger
 import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class BaseExecutor protected constructor(
     override val type: ExecutorType,
-    private val dockerContainer: DockerContainer
+    private val dockerContainer: DockerContainer,
+    private val logger: Logger,
 ) : Poolable, ReservableExecutor, Executor {
     private val scope = CoroutineScope(Dispatchers.Unconfined)
     private var reservationTimestamp: Long = 0
@@ -33,7 +35,6 @@ abstract class BaseExecutor protected constructor(
                 val newState = dockerContainer.stateChannel.receive()
                 applyDockerState(newState)
             }
-//            dockerContainer.stateChannel.consumeEach { applyDockerState(it) }
         }
     }
 
@@ -79,8 +80,11 @@ abstract class BaseExecutor protected constructor(
     protected abstract fun buildExecCommand(script: String): Pair<String, String>
 
     private fun setState(state: ExecutorState) {
+        val oldState = currentState
         this.currentState = state
         this.stateTimestamp = System.currentTimeMillis()
+
+        logger.info("Executor '$id' state changed from $oldState to $state")
     }
 
     private suspend fun applyDockerState(state: DockerContainerState) = coroutineScope {

@@ -7,11 +7,13 @@ import eucalypt.executing.executors.ReservableExecutor
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
+import org.slf4j.Logger
 
 @Suppress("OPT_IN_USAGE")
 internal class ScriptRunnerImpl(
     private val settings: ScriptRunnerSettings,
     private val executorsManager: ExecutorsManager,
+    private val logger: Logger,
 ) : ScriptRunner {
     override suspend fun run(script: String, type: ScriptType): Result<String> {
         type
@@ -22,11 +24,10 @@ internal class ScriptRunnerImpl(
                 executorsManager.redeemExecutor(executor as ReservableExecutor)
                 return Result.success(executionResult)
             }
-            .onFailure {
-                // TODO handle error
-            }
+            .onFailure { logger.error("Failed to borrow executor", it) }
 
-        return Result.failure(Error("Script execution not started"))
+        logger.error("Failed to run script of type $type")
+        return Result.failure(Error("Script execution isn't started"))
     }
 
     private suspend fun runOnExecutor(executor: Executor, script: String) = coroutineScope {

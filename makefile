@@ -42,3 +42,7 @@ local.java.hw:			# POST /java		<-- not supported yet example
 	@ curl -X POST \
 		--data-binary '<some java code here>' \
 		$(BASE_URL)/java
+
+shutdown:			# POST /shutdown		<-- shuts down server gracefully
+	@ curl -X POST \
+		$(BASE_URL)/shutdown

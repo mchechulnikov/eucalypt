@@ -3,10 +3,12 @@ package eucalypt.executing.pool
 import eucalypt.executing.executors.*
 import eucalypt.utils.every
 import kotlinx.coroutines.*
+import org.slf4j.Logger
 
 class ExecutorsPoolImpl(
     private val settings: ExecutorsPoolSettings,
     private val executorsFactory: ExecutorsFactory,
+    private val logger: Logger,
 ) : ExecutorsPool, ExecutorsPoolManager {
     private val executors = mutableMapOf<String, Poolable>()
     private val servingScope = CoroutineScope(Dispatchers.Unconfined)
@@ -35,22 +37,33 @@ class ExecutorsPoolImpl(
     }
 
     override suspend fun start() {
+        logger.info("Starting executors pool '${settings.name}'")
+
         settings.types.forEach { extendIfNeeded(it) }
         servingScope.launch { runServing() }
+
+        logger.info("Executors pool '${settings.name}' started")
     }
 
     override suspend fun stop() {
+        logger.info("Stopping executors pool '${settings.name}'")
+
         servingScope.cancel()
         executors.values.forEach {
-            // TODO force remove all in batch
+            // TODO remove all in batch
             it.eliminate()
             executors.remove(it.id)
         }
+
+        logger.info("Executors pool '${settings.name}' stopped")
     }
 
     private suspend fun addNewExecutor(type: ExecutorType): Poolable {
         val executor = executorsFactory.create(settings.name, type)
         executors[executor.id] = executor
+
+        logger.info( "Created new executor '${executor.id}' of type '${type.name}'")
+
         return executor
     }
 
@@ -72,6 +85,8 @@ class ExecutorsPoolImpl(
                 settings.maxSize - executors.size
             else executors.size * 2
 
+        logger.info("Extending executors pool '${settings.name}' by $addCount executors")
+
         // TODO we can do one operation for all executors by time
         repeat(addCount) { addNewExecutor(type) }
     }
@@ -85,12 +100,17 @@ class ExecutorsPoolImpl(
                 continue
             }
 
+            logger.info(
+                "Shrinking executors pool '${settings.name}' " +
+                "by ${readyExecutors.size / 2} executors of type $type"
+            )
+
             // TODO we can do one operation for all executors by time
             readyExecutors
                 .take(readyExecutors.size / 2)
                 .forEach {
                     launch { it.eliminate() }
-                    executors.remove(it.id)     // TODO remove after elimination?
+                    executors.remove(it.id)
                 }
         }
     }
@@ -106,6 +126,11 @@ class ExecutorsPoolImpl(
         if (hangedExecutors.isEmpty()) {
             return
         }
+
+        logger.info(
+            "Detected hanged executors in pool '${settings.name}': " +
+            hangedExecutors.joinToString(", ") { it.id }
+        )
 
         servingScope.launch {
             hangedExecutors.forEach { it.reset() }

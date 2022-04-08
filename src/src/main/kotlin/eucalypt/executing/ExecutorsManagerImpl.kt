@@ -5,10 +5,11 @@ import eucalypt.executing.executors.ExecutorType
 import eucalypt.executing.executors.ReservableExecutor
 import eucalypt.executing.pool.ExecutorsPool
 import kotlinx.coroutines.delay
+import org.slf4j.Logger
 
 internal class ExecutorsManagerImpl (
     private val settings: ExecutorsManagerSettings,
-    private val pool: ExecutorsPool
+    private val pool: ExecutorsPool,
 ) : ExecutorsManager {
     override suspend fun borrowExecutor(type: ExecutorType): Result<Executor> {
         repeat(settings.borrowAttemptsCount) {

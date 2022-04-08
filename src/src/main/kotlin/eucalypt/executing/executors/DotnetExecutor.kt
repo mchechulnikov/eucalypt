@@ -3,11 +3,13 @@ package eucalypt.executing.executors
 import eucalypt.docker.DockerContainer
 import eucalypt.docker.DockerImage
 import eucalypt.docker.DockerContainerSettings
+import org.slf4j.Logger
 
 internal class DotnetExecutor(
     type: ExecutorType,
-    dockerContainer: DockerContainer
-) : BaseExecutor(type, dockerContainer) {
+    dockerContainer: DockerContainer,
+    logger: Logger
+) : BaseExecutor(type, dockerContainer, logger) {
     override fun buildExecCommand(script: String): Pair<String, String> = "/app/entrypoint.sh" to script
 
     override val typeName: String = ".NET SDK 6.0"
