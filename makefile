@@ -10,7 +10,7 @@ build.images:			# build runners' images
 	@ docker build \
 		-t eucalypt/executor:dotnet6 \
 		-f ./src/src/images/dotnet6/dockerfile \
-		./src/images/dotnet6
+		./src/src/images/dotnet6
 
 clean:				# clean all docker images
 	@ docker container rm -f $$(docker ps -aq)
