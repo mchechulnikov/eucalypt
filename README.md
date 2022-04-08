@@ -1,19 +1,21 @@
 # Eucalypt
-Test assessment: script execution server. Currently only C# scripts are supported
+Script execution by HTTP. Currently only .NET/C# is supported
 
 ## About
-* Ktor for HTTP server
-* Script runners – a.k.a. executors – are Docker containers with memory, CPU restrictions and network isolation. Also TMPFS used instead of real filesystem
+* [Ktor](https://ktor.io) for HTTP server
+* [Koin](https://insert-koin.io) for dependency injection
+* Script runners – a.k.a. executors – are [Docker](https://www.docker.com) containers with memory, CPU restrictions and network isolation. Also [TMPFS](https://en.wikipedia.org/wiki/Tmpfs) used instead of real filesystem
 * Containers ran from pre-build images located `./src/src/images`
 * Executres united in pool. It's is able to automaticaly extend and shink it's own size, detects hanged executors and re-run them
 
 ## How to run
-### Prerequsites
+### Before
+You need
 * Docker
 * Gradle
 * GNU Make
 * curl
-* IDEA
+* IntelliJ IDEA
 
 It has been written and tested on MacBook Pro (14-inch, 2021) Apple M1 Pro, RAM 32 GB via IntelliJ IDEA 2021.3.3 (Ultimate Edition).
 
@@ -46,8 +48,50 @@ To run example first of all run server and then make
 make dotnet.hw      # hello world!
 make dotnet.fib     # Fibonacci numbers up to 42
 make dotnet.fio     # writes some lines to file and reads it
-make dotnet.inf     # infinity operation
+make dotnet.inf     # infinity operation: aborted by timeout and prints stdout
 make dotnet.inv     # invalid code that doesn't compile
+```
+
+For example:
+```
+❯ make dotnet.hw
+> Executing on .NET SDK 6.0
+> Command: dotnet run --no-restore
+> Output:
+
+Hello World!
+
+------------------------------
+✓ Script executed successfully
+> Time elapsed: 2 seconds
+```
+```
+❯ make dotnet.inv
+> Executing on .NET SDK 6.0
+> Command: dotnet run --no-restore
+> Output:
+
+/app/Program.cs(9,29): error CS1002: ; expected [/app/Main.csproj]
+
+The build failed. Fix the build errors and run again.
+
+------------------------------
+✓ Script executed successfully
+> Time elapsed: 0 seconds
+```
+```
+❯ make dotnet.inf
+> Executing on .NET SDK 6.0
+> Command: dotnet run --no-restore
+> Output:
+
+Running...
+Running...
+Running...
+
+----------------------------------------------------
+✗ Script running timeout exceeded. Execution aborted
+> Time elapsed: 10 seconds
 ```
 
 
@@ -283,3 +327,11 @@ sequenceDiagram
         note right of Pool Manager: state of executor is READY
     deactivate Pool Manager
 ```
+
+## What's next?
+* Configuration files instead of hard-coded `Config` object to configure withour rebuild
+* WebSockets to consume running script output line-by-line. That makes execution more interactive for end user
+* Containerize server. This require some changes: operating containers from another container has some difficulties and requires paradigm changing. But in this case I'd prefer to delegate pool management to orchestration tool like [Kubernates](https://kubernetes.io)
+* Run pool on several hosts. Again, it will be reasonable to consider using container orchestrator for that
+* To achieve a posibility to use NuGet it's necessesary: 1) to provide list of packages; 2) make new type of executor with availability to use network by specific URL; 3) Docker network configuration management
+* Support other languanges. Just add executors and wire it up with HTTP interface
