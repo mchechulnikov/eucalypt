@@ -12,6 +12,11 @@ internal object Docker {
         runDocker(arrayOf("pull", image))
     }
 
+    suspend fun getContainerNames(namePrefix: String) : List<String> {
+        val r = runDocker(arrayOf("ps", "-a", "--filter", "name=$namePrefix", "--format", "{{.Names}}"))
+        return r.split("\n").filter { it.isNotEmpty() }
+    }
+
     suspend fun runContainer(name: String, image: String) {
         runDocker(arrayOf("run", "-d", "-it", "-m=100", "--cpus=1.5", "--network", "none", "--name", name, image))
     }
@@ -43,6 +48,10 @@ internal object Docker {
 
     suspend fun removeContainer(container: String) {
         runDocker(arrayOf("rm", "-f", container))
+    }
+
+    suspend fun removeContainers(containers: List<String>) {
+        runDocker(arrayOf("rm", "-f") + containers)
     }
 
     fun exec(container: String, cmd: DockerExecCommand): Pair<Job, Channel<String>> {

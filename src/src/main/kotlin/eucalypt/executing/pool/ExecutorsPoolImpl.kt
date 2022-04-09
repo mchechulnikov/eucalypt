@@ -8,6 +8,7 @@ import org.slf4j.Logger
 class ExecutorsPoolImpl(
     private val settings: ExecutorsPoolSettings,
     private val executorsFactory: ExecutorsFactory,
+    private val garbageCollector: ExecutorsPoolGarbageCollector,
     private val logger: Logger,
 ) : ExecutorsPool, ExecutorsPoolManager {
     private val executors = mutableMapOf<String, Poolable>()
@@ -39,6 +40,7 @@ class ExecutorsPoolImpl(
     override suspend fun start() {
         logger.info("Starting executors pool '${settings.name}'")
 
+        garbageCollector.collect()
         settings.types.forEach { extendIfNeeded(it) }
         servingScope.launch { runServing() }
 

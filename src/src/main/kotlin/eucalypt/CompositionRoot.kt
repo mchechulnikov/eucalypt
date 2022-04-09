@@ -9,10 +9,7 @@ import eucalypt.executing.ExecutorsManagerImpl
 import eucalypt.executing.ExecutorsManagerSettings
 import eucalypt.executing.executors.ExecutorsFactory
 import eucalypt.executing.executors.ExecutorsFactoryImpl
-import eucalypt.executing.pool.ExecutorsPool
-import eucalypt.executing.pool.ExecutorsPoolImpl
-import eucalypt.executing.pool.ExecutorsPoolManager
-import eucalypt.executing.pool.ExecutorsPoolSettings
+import eucalypt.executing.pool.*
 import eucalypt.running.ScriptRunner
 import eucalypt.running.ScriptRunnerImpl
 import eucalypt.running.ScriptRunnerSettings
@@ -31,9 +28,13 @@ val compositionRoot = module {
 
     single { DockerEventsMonitor(get()) } binds arrayOf(DockerMonitorManager::class, DockerEventsFeed::class)
 
+    single<ExecutorsPoolGarbageCollector> {
+        val logger = get<LoggerFactory>().getLogger(ExecutorsPoolGarbageCollectorImpl::class.java)
+        ExecutorsPoolGarbageCollectorImpl(get(), logger)
+    }
     single {
         val logger = get<LoggerFactory>().getLogger(ExecutorsPoolImpl::class.java)
-        ExecutorsPoolImpl(get(), get(), logger)
+        ExecutorsPoolImpl(get(), get(), get(), logger)
     } binds arrayOf(ExecutorsPool::class, ExecutorsPoolManager::class)
 
     single<ExecutorsFactory> { ExecutorsFactoryImpl(get(), get()) }

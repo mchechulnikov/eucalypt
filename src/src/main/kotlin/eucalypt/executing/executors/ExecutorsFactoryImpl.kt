@@ -7,7 +7,7 @@ import java.util.*
 
 internal class ExecutorsFactoryImpl(
     private val dockerEventsFeed: DockerEventsFeed,
-    private val loggerFactory: LoggerFactory
+    loggerFactory: LoggerFactory
 ) : ExecutorsFactory {
     private val executorsLogger = loggerFactory.getLogger(Executor::class.java)
 
