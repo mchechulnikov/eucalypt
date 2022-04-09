@@ -52,8 +52,15 @@ internal class ScriptRunnerImpl(
         durationMs: Long,
         isTimeoutExceeded: Boolean
     ) = buildString {
-            appendLine("> Executing on ${executor.typeName}")
-            appendLine("> Command: ${executor.executingBy}")
+            appendLine("> Executing on ${executor.parameters.executorTypeName}")
+            appendLine("> Resources: " +
+                    "CPU ${executor.parameters.cpuCores}, " +
+                    "RAM ${executor.parameters.memoryMB} MB, " +
+                    "space ${executor.parameters.spaceSizeMB} MB, " +
+                    "network - ${executor.parameters.isNetworkDisabled.not()}"
+            )
+            appendLine()
+
             if (!output.isEmpty) appendLine("> Output:\n")
             else appendLine("> No output")
 

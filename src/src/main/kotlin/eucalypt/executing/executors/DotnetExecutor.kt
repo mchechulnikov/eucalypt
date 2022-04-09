@@ -11,8 +11,7 @@ internal class DotnetExecutor(
     dockerContainer: DockerContainer,
     logger: Logger
 ) : BaseExecutor(type, dockerContainer, logger) {
-    override val typeName: String = ".NET SDK 6.0"
-    override val executingBy: String = "dotnet run --no-restore"
+    override val parameters: ExecutorParameters = DotnetExecutor.parameters
 
     override fun buildExecCommand(script: String) =
         DockerExecCommand(
@@ -21,14 +20,23 @@ internal class DotnetExecutor(
         )
 
     companion object {
+        private val parameters: ExecutorParameters = ExecutorParameters (
+            executorTypeName = ".NET SDK 6.0",
+            memoryMB = 100,
+            cpuCores = 1.5,
+            isNetworkDisabled = true,
+            spaceSizeMB = 100
+        )
+
         fun buildRunCommand(containerName: String) = DockerRunCommand(
             containerName = containerName,
             image = DockerImage(imageName, "dotnet6").toString(),
-            memoryMB = 100,
-            cpus = 1.5,
-            isNetworkDisabled = true,
+            memoryMB = parameters.memoryMB,
+            cpus = parameters.cpuCores,
+            isNetworkDisabled = parameters.isNetworkDisabled,
             tmpfsDir = "/exec-dir",
-            user = "root",
+            tmpfsSizeBytes = parameters.spaceSizeMB * 1024 * 1024,
+            user = "executor",
         )
     }
 }

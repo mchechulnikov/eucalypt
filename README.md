@@ -56,7 +56,8 @@ For example:
 ```
 ❯ make dotnet.hw
 > Executing on .NET SDK 6.0
-> Command: dotnet run --no-restore
+> Resources: CPU 1.5, RAM 100 MB, space 100 MB, network - false
+
 > Output:
 
 Hello World!
@@ -68,21 +69,32 @@ Hello World!
 ```
 ❯ make dotnet.inv
 > Executing on .NET SDK 6.0
-> Command: dotnet run --no-restore
+> Resources: CPU 1.5, RAM 100 MB, space 100 MB, network - false
+
 > Output:
 
-/app/Program.cs(9,29): error CS1002: ; expected [/app/Main.csproj]
+Microsoft (R) Build Engine version 17.1.0+ae57d105c for .NET
+Copyright (C) Microsoft Corporation. All rights reserved.
 
-The build failed. Fix the build errors and run again.
+/exec-dir/Program.cs(9,29): error CS1002: ; expected [/exec-dir/Main.csproj]
+
+Build FAILED.
+
+/exec-dir/Program.cs(9,29): error CS1002: ; expected [/exec-dir/Main.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.85
 
 ------------------------------
 ✓ Script executed successfully
-> Time elapsed: 0 seconds
+> Time elapsed: 1 seconds
 ```
 ```
 ❯ make dotnet.inf
 > Executing on .NET SDK 6.0
-> Command: dotnet run --no-restore
+> Resources: CPU 1.5, RAM 100 MB, space 100 MB, network - false
+
 > Output:
 
 Running...

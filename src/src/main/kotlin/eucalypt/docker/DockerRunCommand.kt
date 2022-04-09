@@ -8,6 +8,6 @@ data class DockerRunCommand (
     val cpus: Double = 1.5,
     val isNetworkDisabled: Boolean = true,
     val tmpfsDir: String? = null,
-    val tmpfsSizeBytes: Long = 100 * 1024 * 1024,
+    val tmpfsSizeBytes: Long = 10 * 1024 * 1024,
     val user: String,
 )

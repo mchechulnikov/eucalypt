@@ -4,8 +4,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.ReceiveChannel
 
 interface Executor {
-    val typeName: String
-    val executingBy: String
+    val parameters: ExecutorParameters
     suspend fun execute(script: String): Pair<Job, ReceiveChannel<String>>
 }
 
