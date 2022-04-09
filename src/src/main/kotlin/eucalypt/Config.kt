@@ -22,7 +22,7 @@ internal object Config {
     object ExecutorsPoolConfig : ExecutorsPoolSettings {
         override var name: String = poolName
         override var maxSize: Int = 20
-        override var minReadyExecutorsCount: Int = 5
+        override var minReadyExecutorsCount: Int = 1
         override var detectHangedIntervalMs: Long = 10_000
         override var shrinkIntervalMs: Long = 30_000
         override var readinessProbeIntervalMs: Long = 1000

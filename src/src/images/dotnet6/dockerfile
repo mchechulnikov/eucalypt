@@ -1,15 +1,18 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0
 
-WORKDIR /app
+RUN mkdir /restore-dir
 
-COPY ./entrypoint.sh .
-RUN chmod +x ./entrypoint.sh
-
+WORKDIR /restore-dir
 
 COPY ./Main.csproj .
+COPY ./exec.sh .
+RUN chmod +x ./exec.sh
+
 RUN dotnet restore
 
-RUN adduser --system --home /app --uid 1000 csexec
-RUN chown -R csexec /app
+# user to execute commands in container
+RUN addgroup --system --gid 1000 executor \
+    && adduser --system --uid 1000 --ingroup executor --shell /bin/bash executor
 
-USER csexec
+USER executor
+

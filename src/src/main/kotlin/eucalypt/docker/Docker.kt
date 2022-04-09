@@ -16,17 +16,23 @@ internal object Docker {
         runDocker(arrayOf("run", "-d", "-it", "-m=100", "--cpus=1.5", "--network", "none", "--name", name, image))
     }
 
-    suspend fun runContainer(name: String, settings: DockerContainerSettings) {
+    suspend fun runContainer(cmd: DockerRunCommand) {
         val args =
             """
                 run -d -it
-                --name $name
-                --memory=${settings.memoryMB}m
-                --cpus=${settings.cpus}
-                --network ${if (settings.isNetworkDisabled) "none" else "bridge"}
-                -u ${settings.user}
-                ${settings.image}
-            """.trimIndent().replace('\n', ' ').split(" ").toTypedArray()
+                --name ${cmd.containerName}
+                --memory=${cmd.memoryMB}m
+                --cpus=${cmd.cpus}
+                --network ${if (cmd.isNetworkDisabled) "none" else "bridge"}
+                ${
+                    if (cmd.tmpfsDir != null) 
+                        "--mount type=tmpfs,destination=${cmd.tmpfsDir},tmpfs-size=${cmd.tmpfsSizeBytes}"
+                    else ""
+                }
+                -u ${cmd.user}
+                ${cmd.image}
+                ${cmd.command}
+            """.trimIndent().replace('\n', ' ').split(" ").filter { it.isNotEmpty() }.toTypedArray()
         runDocker(args);
     }
 
@@ -39,10 +45,22 @@ internal object Docker {
         runDocker(arrayOf("rm", "-f", container))
     }
 
-    fun exec(container: String, cmd1: String, cmd2: String): Pair<Job, Channel<String>> {
+    fun exec(container: String, cmd: DockerExecCommand): Pair<Job, Channel<String>> {
         val channel = Channel<String>(100, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-        val args = arrayOf("exec", container, cmd1, cmd2)
-        return readStreamByLines("docker", args, channel) to channel
+        val args =
+            """
+                exec 
+                ${if (cmd.workdir != null) "-w ${cmd.workdir}" else ""}
+                -u ${cmd.user}
+                $container
+            """
+                .trimIndent()
+                .replace('\n', ' ')
+                .split(" ")
+                .filter { it.isNotEmpty() }
+                .toTypedArray()
+
+        return readStreamByLines("docker", args + cmd.command, channel) to channel
     }
 
     fun monitorEvents(containerNamePrefix: String, eventsChannel: Channel<String>): Job {

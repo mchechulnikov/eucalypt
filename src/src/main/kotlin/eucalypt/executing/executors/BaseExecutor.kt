@@ -2,6 +2,7 @@ package eucalypt.executing.executors
 
 import eucalypt.docker.DockerContainer
 import eucalypt.docker.DockerContainerState
+import eucalypt.docker.DockerExecCommand
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -45,8 +46,8 @@ abstract class BaseExecutor protected constructor(
 
         setState(ExecutorState.EXECUTING)
 
-        val (cmd, arg) = buildExecCommand(script)
-        return dockerContainer.exec(cmd, arg)
+        val cmd = buildExecCommand(script)
+        return dockerContainer.exec(cmd)
     }
 
     override fun tryReserve(): Boolean {
@@ -77,7 +78,7 @@ abstract class BaseExecutor protected constructor(
         scope.launch { reset() }
     }
 
-    protected abstract fun buildExecCommand(script: String): Pair<String, String>
+    protected abstract fun buildExecCommand(script: String): DockerExecCommand
 
     private fun setState(state: ExecutorState) {
         val oldState = currentState

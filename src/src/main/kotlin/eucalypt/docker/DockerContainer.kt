@@ -5,7 +5,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 
 class DockerContainer private constructor(
     val name: String,
-    private val settings: DockerContainerSettings,
+    private val runCommand: DockerRunCommand,
     private val eventsFeed: DockerEventsFeed
 ) {
     private var currentState: DockerContainerState = DockerContainerState.UNKNOWN
@@ -17,23 +17,23 @@ class DockerContainer private constructor(
     companion object {
         suspend fun run(
             name: String,
-            settings: DockerContainerSettings,
+            command: DockerRunCommand,
             eventsFeed: DockerEventsFeed
         ): DockerContainer {
-            val container = DockerContainer(name, settings, eventsFeed)
+            val container = DockerContainer(name, command, eventsFeed)
             eventsFeed.subscribe(name) { container.handleEvent(it) }
 
-            Docker.runContainer(name, settings)
+            Docker.runContainer(command)
 
             return container
         }
     }
 
-    fun exec(command: String, argument: String) = Docker.exec(name, command, argument)
+    fun exec(command: DockerExecCommand) = Docker.exec(name, command)
 
     suspend fun rerun() {
         Docker.removeContainer(name)
-        Docker.runContainer(name, settings)
+        Docker.runContainer(runCommand)
     }
 
     suspend fun remove() {
