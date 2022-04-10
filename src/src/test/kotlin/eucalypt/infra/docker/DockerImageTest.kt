@@ -1,4 +1,4 @@
-package eucalypt.docker
+package eucalypt.infra.docker
 
 import eucalypt.infra.docker.DockerImage
 import org.junit.jupiter.api.TestInstance

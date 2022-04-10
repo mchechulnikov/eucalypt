@@ -44,8 +44,6 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     testImplementation("io.mockk:mockk:1.12.3")
-//    testImplementation("io.insert-koin:koin-test:$koin_version")
-//    testImplementation ("io.insert-koin:koin-test-junit5:$koin_version")
 }
 
 tasks.test {

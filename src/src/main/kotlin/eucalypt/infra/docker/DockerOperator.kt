@@ -12,6 +12,6 @@ interface DockerOperator {
     suspend fun runContainer(cmd: DockerRunCommand)
     suspend fun removeContainer(container: String)
     suspend fun removeContainers(containers: List<String>)
-    fun exec(container: String, cmd: DockerExecCommand): Pair<Job, Channel<String>>
+    fun exec(container: String, cmd: DockerExecCommand): Pair<Job, ReceiveChannel<String>>
     fun monitorEvents(cmd: DockerEventsCommand): Pair<Job, ReceiveChannel<String>>
 }

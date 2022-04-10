@@ -1,9 +1,6 @@
-package eucalypt.docker
+package eucalypt.infra.docker
 
 import eucalypt.business.executing.executors.BaseExecutor
-import eucalypt.infra.docker.DockerImage
-import eucalypt.infra.docker.DockerOperator
-import eucalypt.infra.docker.DockerOperatorImpl
 import eucalypt.infra.docker.commands.DockerEventsCommand
 import eucalypt.infra.docker.commands.DockerExecCommand
 import eucalypt.infra.docker.commands.DockerRunCommand
