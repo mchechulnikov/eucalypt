@@ -10,7 +10,7 @@ class DockerContainer private constructor(
     private val runCommand: DockerRunCommand,
     private val eventsFeed: DockerEventsFeed
 ) {
-    private var currentState: DockerContainerState = DockerContainerState.UNKNOWN
+    private var currentState: DockerContainerState = DockerContainerState.STOPPED
     private val stateChangeChannel = Channel<DockerContainerState>(Channel.UNLIMITED)
 
     val stateChannel: ReceiveChannel<DockerContainerState>
@@ -39,41 +39,33 @@ class DockerContainer private constructor(
     }
 
     suspend fun remove() {
-        Docker.removeContainer(name)
         eventsFeed.unsubscribe(name)
+        Docker.removeContainer(name)
         stateChangeChannel.cancel()
-        currentState = DockerContainerState.REMOVED
     }
 
     override fun toString(): String = name
 
     private suspend fun handleEvent(event: DockerEvent) {
+        // States transition based on
+        // https://medium.com/devopsion/life-and-death-of-a-container-146dfc62f808
+        // NOTE: This is not a complete implementation of the Docker container lifecycle
         val supposedState = when (event.status) {
-            "create" -> DockerContainerState.NOT_READY
-            "start" -> DockerContainerState.READY
-            "unpause" -> DockerContainerState.NEED_RESTART
-            "restart" -> DockerContainerState.NEED_RESTART
-            "pause" -> DockerContainerState.NEED_RESTART
-            "kill" -> DockerContainerState.NEED_RESTART
-            "die" -> DockerContainerState.NEED_RESTART
-            "oom" -> DockerContainerState.NEED_RESTART
-            "stop" -> DockerContainerState.NEED_RESTART
-            "rename" -> DockerContainerState.NEED_RESTART
-            "destroy" -> DockerContainerState.REMOVED
+            "create" -> DockerContainerState.STOPPED
+            "start" -> DockerContainerState.RUNNING
+            "restart" -> DockerContainerState.RUNNING   // docker restart: die -> start -> restart -> RUNNING
+            "unpause" -> DockerContainerState.RUNNING
+            "pause" -> DockerContainerState.PAUSED
+            "kill" -> DockerContainerState.STOPPED      // if there is no start event, it's considered as a STOPPED
+            "die" -> DockerContainerState.STOPPED       // if there is no start event, it's considered as a STOPPED
+            "oom" -> DockerContainerState.STOPPED       // if there is no start event, it's considered as a STOPPED
+            "stop" -> DockerContainerState.STOPPED
+            "destroy" -> DockerContainerState.DELETED
             else -> DockerContainerState.UNKNOWN
         }
 
-        if (supposedState != DockerContainerState.UNKNOWN) {
-            currentState = supposedState
-            stateChangeChannel.send(currentState)
-        }
+        currentState = supposedState
+        stateChangeChannel.send(currentState)
     }
 }
 
-enum class DockerContainerState {
-    UNKNOWN,
-    NOT_READY,
-    READY,
-    NEED_RESTART,
-    REMOVED,
-}

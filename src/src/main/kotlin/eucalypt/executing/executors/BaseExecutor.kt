@@ -4,6 +4,7 @@ import eucalypt.docker.DockerContainer
 import eucalypt.docker.DockerContainerState
 import eucalypt.docker.commands.DockerExecCommand
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import org.slf4j.Logger
@@ -17,12 +18,10 @@ abstract class BaseExecutor protected constructor(
     private val scope = CoroutineScope(Dispatchers.Unconfined)
     private var reservationTimestamp: Long = 0
     private val isReserved: AtomicBoolean = AtomicBoolean(false)
-    private val readinessChannel: Channel<Boolean> = Channel(Channel.UNLIMITED)
+    private val readinessChannel: Channel<Boolean> = Channel(1, BufferOverflow.DROP_OLDEST)
 
     override var currentState: ExecutorState = ExecutorState.NEW
-
     override var stateTimestamp: Long = System.currentTimeMillis()
-
     override val id get() = dockerContainer.name
     override val readiness: ReceiveChannel<Boolean> get() = readinessChannel
 
@@ -32,9 +31,8 @@ abstract class BaseExecutor protected constructor(
 
     suspend fun init() {
         scope.launch {
-            while (true) {
-                val newState = dockerContainer.stateChannel.receive()
-                applyDockerState(newState)
+            while (isActive) {
+                applyDockerState(dockerContainer.stateChannel.receive())
             }
         }
     }
@@ -45,34 +43,40 @@ abstract class BaseExecutor protected constructor(
         }
 
         setState(ExecutorState.EXECUTING)
+        readinessChannel.send(false)
 
         val cmd = buildExecCommand(script)
         return dockerContainer.exec(cmd)
     }
 
-    override fun tryReserve(): Boolean {
+    override suspend fun tryReserve(): Boolean {
         if (!isReserved.compareAndSet(false, true)) {
             return false
         }
 
         reservationTimestamp = System.currentTimeMillis()
         setState(ExecutorState.RESERVED)
+        readinessChannel.send(false)
 
         return true
     }
 
     override suspend fun reset() {
         setState(ExecutorState.RESET)
+        readinessChannel.send(false)
         dockerContainer.rerun()
     }
 
     override suspend fun eliminate() {
         setState(ExecutorState.ELIMINATED)
+        readinessChannel.send(false)
         dockerContainer.remove()
     }
 
     override suspend fun release() {
         setState(ExecutorState.RELEASED)
+        readinessChannel.send(false)
+
         unreserve()
 
         scope.launch { reset() }
@@ -82,6 +86,10 @@ abstract class BaseExecutor protected constructor(
 
     private fun setState(state: ExecutorState) {
         val oldState = currentState
+        if (oldState == state) {
+            return
+        }
+
         this.currentState = state
         this.stateTimestamp = System.currentTimeMillis()
 
@@ -89,16 +97,32 @@ abstract class BaseExecutor protected constructor(
     }
 
     private suspend fun applyDockerState(state: DockerContainerState) = coroutineScope {
-        if (state != DockerContainerState.READY) {
-            return@coroutineScope
+        when (state) {
+            DockerContainerState.STOPPED -> {
+                if (currentState != ExecutorState.NEW) {
+                    setState(ExecutorState.RESET)
+                    readinessChannel.send(false)
+                }
+            }
+            DockerContainerState.RUNNING -> {
+                setState(ExecutorState.READY)
+                readinessChannel.send(true)
+            }
+            DockerContainerState.PAUSED -> {
+                setState(ExecutorState.RESET)
+                readinessChannel.send(false)
+            }
+            DockerContainerState.DELETED -> {
+                if (currentState != ExecutorState.RESET) {
+                    setState(ExecutorState.ELIMINATED)
+                    readinessChannel.send(false)
+                }
+            }
+            else -> {
+                setState(ExecutorState.RESET)
+                readinessChannel.send(false)
+            }
         }
-
-        if (isReserved.get()) {
-            unreserve()
-        }
-
-        setState(ExecutorState.READY)
-        readinessChannel.send(true)
     }
 
     private fun unreserve() {

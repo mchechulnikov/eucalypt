@@ -20,8 +20,10 @@ class ExecutorsPoolImpl(
             return Result.success(executor as ReservableExecutor)
         }
 
-        // try to extend pool
+        logger.info("Try to extend pool for type: $type")
+
         if (executors.size > settings.maxSize) {
+            logger.info("Pool exceed max size ${settings.maxSize}, cannot get executor")
             return Result.failure(Error("Pool size exceeded"))
         }
 
@@ -50,7 +52,6 @@ class ExecutorsPoolImpl(
     override suspend fun stop() {
         logger.info("Stopping executors pool '${settings.name}'")
 
-
         // TODO remove all in batch
         executors.values.forEach { it.eliminate() }
         val executorsIds = executors.values.map { it.id }
@@ -62,6 +63,8 @@ class ExecutorsPoolImpl(
     }
 
     private suspend fun addNewExecutor(type: ExecutorType): Poolable {
+        logger.info("Creating new executor of type '$type'")
+
         val executor = executorsFactory.create(settings.name, type)
         executors[executor.id] = executor
 

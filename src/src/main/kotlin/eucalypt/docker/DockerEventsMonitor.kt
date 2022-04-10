@@ -30,8 +30,9 @@ internal class DockerEventsMonitor (
         val (job, channel) = Docker.monitorEvents(DockerEventsCommand(
             containerNamePrefix = settings.containersPrefix,
             eventTypes = listOf(
-                "create", "start", "restart", "pause", "unpause",
-                "kill", "die", "oom", "stop", "rename", "destroy",
+                "create", "start", "restart",
+                "pause", "unpause", "kill",
+                "die", "oom", "stop", "destroy",
             ),
             format = "{{.Actor.Attributes.name}},{{.Status}}",
             sinceMs = System.currentTimeMillis().toString(),
