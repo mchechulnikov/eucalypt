@@ -6,10 +6,10 @@ interface ExecutorsPoolSettings {
     val name: String
     val maxSize: Int
     val minReadyExecutorsCount: Int
-    val detectHangedIntervalMs: Long
+    val isShrinkEnabled: Boolean
     val shrinkIntervalMs: Long
-    val readinessProbeIntervalMs: Long
-    val maxReadinessProbeAttempts: Int
+    val isDetectHangedEnabled: Boolean
+    val detectHangedIntervalMs: Long
     val hangingTimeoutMs: Long
     val types: List<ExecutorType>
 }

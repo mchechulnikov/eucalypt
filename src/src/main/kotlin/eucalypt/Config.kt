@@ -22,10 +22,10 @@ internal object Config {
         override var name: String = poolName
         override var maxSize: Int = 20
         override var minReadyExecutorsCount: Int = 3
-        override var detectHangedIntervalMs: Long = 10_000
+        override val isShrinkEnabled: Boolean = true
         override var shrinkIntervalMs: Long = 30_000
-        override var readinessProbeIntervalMs: Long = 1000
-        override var maxReadinessProbeAttempts: Int = 3
+        override val isDetectHangedEnabled: Boolean = true
+        override var detectHangedIntervalMs: Long = 10_000
         override var hangingTimeoutMs: Long = 20_000
         override var types: List<ExecutorType> = listOf(ExecutorType.DOTNET6)
     }

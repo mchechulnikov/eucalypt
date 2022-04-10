@@ -11,6 +11,7 @@ class ExecutorsPoolImpl(
     private val garbageCollector: ExecutorsPoolGarbageCollector,
     private val logger: Logger,
 ) : ExecutorsPool, ExecutorsPoolManager {
+    private var isRunning = false
     private val executors = mutableMapOf<String, Poolable>()
     private val servingScope = CoroutineScope(Dispatchers.Unconfined)
 
@@ -46,10 +47,16 @@ class ExecutorsPoolImpl(
         settings.types.forEach { extendIfNeeded(it) }
         servingScope.launch { runServing() }
 
+        isRunning = true
+
         logger.info("Executors pool '${settings.name}' started")
     }
 
     override suspend fun stop() {
+        if (!isRunning) {
+            throw ExecutorsPoolException("Pool is not running")
+        }
+
         logger.info("Stopping executors pool '${settings.name}'")
 
         // TODO remove all in batch
@@ -74,12 +81,15 @@ class ExecutorsPoolImpl(
     }
 
     private suspend fun runServing() = coroutineScope {
-        launch { every(settings.shrinkIntervalMs, ::shrinkIfNeeded) }
-        launch { every(settings.detectHangedIntervalMs, ::detectHanged) }
+        if (settings.isShrinkEnabled)
+            launch { every(settings.shrinkIntervalMs, ::shrinkIfNeeded) }
+
+        if (settings.isDetectHangedEnabled)
+            launch { every(settings.detectHangedIntervalMs, ::detectHanged) }
     }
 
     private suspend fun extendIfNeeded(type: ExecutorType) {
-        val readyExecutors = executors.values.filter { it.type == type }
+        val readyExecutors = executors.values.filter { it.currentState.isReady && it.type == type }
         if (readyExecutors.size >= settings.minReadyExecutorsCount) {
             return
         }
