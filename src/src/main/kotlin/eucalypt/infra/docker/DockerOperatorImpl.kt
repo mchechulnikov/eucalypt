@@ -14,10 +14,6 @@ internal class DockerOperatorImpl : DockerOperator {
         return r.split("\n").filter { it.isNotEmpty() }
     }
 
-    override suspend fun runContainer(name: String, image: String) {
-        runDocker(arrayOf("run", "-d", "-it", "-m=100", "--cpus=1.5", "--network", "none", "--name", name, image))
-    }
-
     override suspend fun runContainer(cmd: DockerRunCommand) {
         val args =
             """

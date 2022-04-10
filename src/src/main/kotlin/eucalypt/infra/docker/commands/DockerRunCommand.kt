@@ -1,6 +1,6 @@
 package eucalypt.infra.docker.commands
 
-data class DockerRunCommand (
+data class DockerRunCommand(
     val containerName: String,
     val command: String = "",
     val image: String,

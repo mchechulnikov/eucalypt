@@ -9,7 +9,6 @@ import kotlinx.coroutines.channels.ReceiveChannel
 
 interface DockerOperator {
     suspend fun getContainerNames(namePrefix: String) : List<String>
-    suspend fun runContainer(name: String, image: String)
     suspend fun runContainer(cmd: DockerRunCommand)
     suspend fun removeContainer(container: String)
     suspend fun removeContainers(containers: List<String>)

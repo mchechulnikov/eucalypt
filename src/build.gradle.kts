@@ -7,8 +7,8 @@ val koin_version: String by project
 
 plugins {
     application
-    kotlin("jvm") version "1.6.20"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.6.20"
+    kotlin("jvm") version "1.6.10"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.6.10"
 }
 
 group = "mchechulnikov"
@@ -45,7 +45,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     testImplementation("io.mockk:mockk:1.12.3")
 //    testImplementation("io.insert-koin:koin-test:$koin_version")
-    testImplementation ("io.insert-koin:koin-test-junit5:$koin_version")
+//    testImplementation ("io.insert-koin:koin-test-junit5:$koin_version")
 }
 
 tasks.test {
