@@ -2,8 +2,10 @@ package eucalypt.running
 
 import eucalypt.executing.ExecutorsManager
 import eucalypt.executing.executors.Executor
+import eucalypt.executing.executors.ExecutorParameters
 import eucalypt.executing.executors.ExecutorType
 import eucalypt.executing.executors.ReservableExecutor
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
@@ -32,32 +34,32 @@ internal class ScriptRunnerImpl(
 
     private suspend fun runOnExecutor(executor: Executor, script: String) = coroutineScope {
         val startTime: Long = System.currentTimeMillis()
-        val (job, output) = executor.execute(script)
+        val (job, outputChannel) = executor.execute(script)
         val jobResult = withTimeoutOrNull(settings.runningTimeoutMs) {
             job.join()
         }
         val endTime: Long = System.currentTimeMillis()
 
         buildOutput(
-            executor,
-            output,
+            executorParameters = executor.parameters,
+            output = outputChannel,
             durationMs = endTime - startTime,
             isTimeoutExceeded = jobResult == null
         )
     }
 
     private suspend fun buildOutput(
-        executor: Executor,
+        executorParameters: ExecutorParameters,
         output: ReceiveChannel<String>,
         durationMs: Long,
         isTimeoutExceeded: Boolean
     ) = buildString {
-            appendLine("> Executing on ${executor.parameters.executorTypeName}")
+            appendLine("> Executing on ${executorParameters.executorTypeName}")
             appendLine("> Resources: " +
-                    "CPU ${executor.parameters.cpuCores}, " +
-                    "RAM ${executor.parameters.memoryMB} MB, " +
-                    "space ${executor.parameters.spaceSizeMB} MB, " +
-                    "network - ${executor.parameters.isNetworkDisabled.not()}"
+                    "CPU ${executorParameters.cpuCores}, " +
+                    "RAM ${executorParameters.memoryMB} MB, " +
+                    "space ${executorParameters.spaceSizeMB} MB, " +
+                    "network - ${executorParameters.isNetworkDisabled.not()}"
             )
             appendLine()
 
