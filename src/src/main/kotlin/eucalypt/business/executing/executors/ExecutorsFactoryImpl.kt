@@ -12,6 +12,10 @@ internal class ExecutorsFactoryImpl(
     private val executorsLogger: Logger,
 ) : ExecutorsFactory {
     override suspend fun create(namePrefix: String, type: ExecutorType): BaseExecutor {
+        if (namePrefix.isEmpty()) {
+            throw IllegalArgumentException("namePrefix must not be empty")
+        }
+
         val containerName = getNewContainerName(namePrefix, type)
 
         val executor = when (type) {

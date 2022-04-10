@@ -31,9 +31,7 @@ abstract class BaseExecutor protected constructor(
 
     suspend fun init() {
         scope.launch {
-            while (isActive) {
-                applyDockerState(dockerContainer.stateChannel.receive())
-            }
+            while (isActive) applyDockerState(dockerContainer.stateChannel.receive())
         }
     }
 
