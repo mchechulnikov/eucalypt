@@ -26,7 +26,10 @@ val compositionRoot = module {
     factory<ExecutorsPoolSettings> { Config.ExecutorsPoolConfig }
     factory<ExecutorsManagerSettings> { Config.ExecutorsManagerConfig }
 
-    single { DockerEventsMonitor(get()) } binds arrayOf(DockerMonitorManager::class, DockerEventsFeed::class)
+    single {
+        val logger = get<LoggerFactory>().getLogger(DockerEventsMonitor::class.java)
+        DockerEventsMonitor(get(), logger)
+    } binds arrayOf(DockerMonitorManager::class, DockerEventsFeed::class)
 
     single<ExecutorsPoolGarbageCollector> {
         val logger = get<LoggerFactory>().getLogger(ExecutorsPoolGarbageCollectorImpl::class.java)

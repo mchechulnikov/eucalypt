@@ -1,16 +1,16 @@
 package eucalypt.docker
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.ReceiveChannel
+import org.slf4j.Logger
 
 internal class DockerEventsMonitor (
-    private val settings: DockerEventMonitorSettings
+    private val settings: DockerEventMonitorSettings,
+    private val logger: Logger
 ): DockerMonitorManager, DockerEventsFeed {
     private val scope = CoroutineScope(Dispatchers.Default)
-    private var eventsChannel: Channel<String> = Channel(Channel.UNLIMITED)
     private var monitorJob: Job? = null
+    private var eventsChannel: ReceiveChannel<String>? = null
     private val subscribers = mutableMapOf<String, suspend (DockerEvent) -> Unit>()
 
     override fun subscribe(container: String, callback: suspend (DockerEvent) -> Unit) {
@@ -26,23 +26,39 @@ internal class DockerEventsMonitor (
             throw DockerMonitorException("Docker monitor already started")
         }
 
-        monitorJob = Docker.monitorEvents(settings.containersPrefix, eventsChannel)
+        val (job, channel) = Docker.monitorEvents(DockerEventsCommand(
+            containerNamePrefix = settings.containersPrefix,
+            eventTypes = listOf(
+                "create", "start", "restart", "pause", "unpause",
+                "kill", "die", "oom", "stop", "rename", "destroy",
+            ),
+            format = "{{.Actor.Attributes.name}},{{.Status}}",
+            sinceMs = System.currentTimeMillis().toString(),
+        ))
+        monitorJob = job
+        eventsChannel = channel
+
         scope.launch {
             while (true) {
-                val rawEvent = eventsChannel.receive()
+                val rawEvent = channel.receive()
                 if (rawEvent.isNotBlank()) {
                     val event = parseEvent(rawEvent.trim())
                     subscribers[event.container]?.invoke(event)
                 }
             }
         }
+
+        logger.info("Docker events monitor started")
     }
 
     override fun stop() {
         monitorJob?.cancel(CancellationException("Docker monitor stopped"))
         monitorJob = null
-        eventsChannel.cancel()
+        eventsChannel?.cancel()
+        eventsChannel = null
         scope.cancel()
+
+        logger.info("Docker events monitor stopped")
     }
 
     private fun parseEvent(event: String): DockerEvent =

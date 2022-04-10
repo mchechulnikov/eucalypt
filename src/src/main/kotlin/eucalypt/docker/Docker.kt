@@ -3,6 +3,7 @@ package eucalypt.docker
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 
 internal object Docker {
     suspend fun isImageExists(image: String): Boolean =
@@ -72,26 +73,22 @@ internal object Docker {
         return readStreamByLines("docker", args + cmd.command, channel) to channel
     }
 
-    fun monitorEvents(containerNamePrefix: String, eventsChannel: Channel<String>): Job {
-        val args =
-            arrayOf(
-                "events",
-                "--filter", "container=$containerNamePrefix",
-                "--filter", "event=restart",
-                "--filter", "event=create",
-                "--filter", "event=start",
-                "--filter", "event=pause",
-                "--filter", "event=unpause",
-                "--filter", "event=kill",
-                "--filter", "event=die",
-                "--filter", "event=oom",
-                "--filter", "event=stop",
-                "--filter", "event=rename",
-                "--filter", "event=destroy",
-                "--format", "{{.Actor.Attributes.name}},{{.Status}}",
-                "--since", System.currentTimeMillis().toString(),
-            )
-        return readStreamByLines("docker", args, eventsChannel)
+    fun monitorEvents(cmd: DockerEventsCommand): Pair<Job, ReceiveChannel<String>> {
+        val channel = Channel<String>(Channel.UNLIMITED)
+        val args = buildString {
+            appendLine("events")
+            appendLine("--filter container=${cmd.containerNamePrefix}")
+            cmd.eventTypes.forEach { appendLine("--filter event=$it") }
+            appendLine("--format ${cmd.format}")
+            appendLine("--since ${cmd.sinceMs}")
+        }
+            .trimIndent()
+            .replace('\n', ' ')
+            .split(" ")
+            .filter { it.isNotEmpty() }
+            .toTypedArray()
+
+        return readStreamByLines("docker", args, channel) to channel
     }
 
     private suspend fun runDocker(args: Array<String>) = runCmd("docker", args)
@@ -110,16 +107,16 @@ internal object Docker {
         stdout
     }
 
-    private suspend fun runCmdIgnoringError(cmd: String, args: Array<String>): String = withContext(Dispatchers.IO) {
-        val builder = ProcessBuilder(cmd, *args)
-        builder.redirectErrorStream(true)
-        val process = builder.start()
-        val stdout = process.inputStream.bufferedReader().readText()
-
-        process.waitFor()
-
-        stdout
-    }
+//    private suspend fun runCmdIgnoringError(cmd: String, args: Array<String>): String = withContext(Dispatchers.IO) {
+//        val builder = ProcessBuilder(cmd, *args)
+//        builder.redirectErrorStream(true)
+//        val process = builder.start()
+//        val stdout = process.inputStream.bufferedReader().readText()
+//
+//        process.waitFor()
+//
+//        stdout
+//    }
 
     private fun readStreamByLines(cmd: String, args: Array<String>, channel: Channel<String>): Job {
         val builder = ProcessBuilder(cmd, *args)
