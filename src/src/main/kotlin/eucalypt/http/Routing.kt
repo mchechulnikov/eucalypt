@@ -14,10 +14,6 @@ fun Application.configureRouting() {
     val scriptRunner: ScriptRunner by inject(ScriptRunner::class.java)
 
     routing {
-        get("/") {
-            call.respondText("Eucalypt: code executing server")
-        }
-
         post("/dotnet") {
             val script = call.receive<String>()
 
@@ -31,13 +27,6 @@ fun Application.configureRouting() {
                         status = HttpStatusCode.InternalServerError
                     )
                 }
-        }
-
-        post("/java") {
-            call.respondText(
-                "Java code isn't supported yet",
-                status = HttpStatusCode.NotAcceptable
-            )
         }
     }
 }

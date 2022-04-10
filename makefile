@@ -18,9 +18,6 @@ clean:				# clean all docker images
 docker.events:			# show docker events to check situation
 	@ docker events --format "{{.Actor.Attributes.name}},{{.Status}}" --filter 'container=eucalypt-executor-main' 
 
-root:				# GET /			<-- default root result
-	@ curl -X GET $(BASE_URL)
-
 dotnet.hw:			# POST /dotnet		<-- BODY: ./examples/hello-world.cs
 	@ curl -X POST \
 		--data-binary @./examples/hello-world.cs \
@@ -50,11 +47,6 @@ dotnet.fib:			# POST /dotnet		<-- BODY: ./examples/fib.cs
 	@ curl -X POST \
 		--data-binary @./examples/fib.cs \
 		$(BASE_URL)/dotnet
-
-java.hw:			# POST /java		<-- not supported yet example
-	@ curl -X POST \
-		--data-binary '<some java code here>' \
-		$(BASE_URL)/java
 
 shutdown:			# POST /shutdown	<-- shuts down server gracefully
 	@ curl -X POST \

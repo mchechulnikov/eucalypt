@@ -41,6 +41,10 @@ class ExecutorsPoolImpl(
     }
 
     override suspend fun start() {
+        if (isRunning) {
+            return
+        }
+
         logger.info("Starting executors pool '${settings.name}'")
 
         garbageCollector.collect()
@@ -54,8 +58,10 @@ class ExecutorsPoolImpl(
 
     override suspend fun stop() {
         if (!isRunning) {
-            throw ExecutorsPoolException("Pool is not running")
+            return
         }
+
+        isRunning = false
 
         logger.info("Stopping executors pool '${settings.name}'")
 

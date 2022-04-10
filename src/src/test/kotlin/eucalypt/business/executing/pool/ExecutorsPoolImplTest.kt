@@ -264,12 +264,12 @@ internal class ExecutorsPoolImplTest {
     }
 
     @Test
-    fun `stop - pool is not running - throws `() {
+    fun `stop - pool is not running - doesn't throw`() {
         // arrange
         val pool = ExecutorsPoolImpl(settings, executorsFactory, garbageCollector, logger)
 
         // act, assert
-        assertThrows<ExecutorsPoolException> { runBlocking { pool.stop() } }
+        assertDoesNotThrow { runBlocking { pool.stop() } }
     }
 
     @Test

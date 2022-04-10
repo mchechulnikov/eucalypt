@@ -15,13 +15,14 @@ internal class CoroutinesKtTest {
         coEvery { callback() } coAnswers { count++ }
 
         // act
-        val job = CoroutineScope(Dispatchers.Default).launch {
+        val job = CoroutineScope(Dispatchers.Unconfined).launch {
             every(10, callback)
         }
         delay(100)
         val exactly = count
         job.cancel()
-        delay(100)
+        job.join()
+        delay(200)
 
         // assert
         coVerify(exactly = exactly) { callback() }

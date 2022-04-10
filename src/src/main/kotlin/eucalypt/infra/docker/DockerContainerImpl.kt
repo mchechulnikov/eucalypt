@@ -36,13 +36,13 @@ class DockerContainerImpl private constructor(
     override fun exec(command: DockerExecCommand) = dockerOperator.exec(name, command)
 
     override suspend fun rerun() {
-        dockerOperator.removeContainer(name)
+        removeContainer()
         dockerOperator.runContainer(runCommand)
     }
 
     override suspend fun remove() {
         eventsFeed.unsubscribe(name)
-        dockerOperator.removeContainer(name)
+        removeContainer()
         stateChangeChannel.cancel()
     }
 
@@ -68,6 +68,15 @@ class DockerContainerImpl private constructor(
 
         currentState = supposedState
         stateChangeChannel.send(currentState)
+    }
+
+    private suspend fun removeContainer() {
+        try {
+            dockerOperator.removeContainer(name)
+        } catch (_: DockerException) {
+            // sometimes containers are already removed in case of race condition
+            // it's okay to ignore this exception because we are removing the container anyway
+        }
     }
 }
 
