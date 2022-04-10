@@ -1,9 +1,9 @@
 package eucalypt.executing.executors
 
 import eucalypt.docker.DockerContainer
-import eucalypt.docker.DockerExecCommand
+import eucalypt.docker.commands.DockerExecCommand
 import eucalypt.docker.DockerImage
-import eucalypt.docker.DockerRunCommand
+import eucalypt.docker.commands.DockerRunCommand
 import org.slf4j.Logger
 
 internal class DotnetExecutor(

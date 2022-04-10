@@ -1,5 +1,6 @@
 package eucalypt.docker
 
+import eucalypt.docker.commands.DockerEventsCommand
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import org.slf4j.Logger

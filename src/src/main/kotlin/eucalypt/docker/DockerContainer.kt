@@ -1,5 +1,7 @@
 package eucalypt.docker
 
+import eucalypt.docker.commands.DockerExecCommand
+import eucalypt.docker.commands.DockerRunCommand
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 

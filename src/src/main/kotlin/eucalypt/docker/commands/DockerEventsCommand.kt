@@ -1,4 +1,4 @@
-package eucalypt.docker
+package eucalypt.docker.commands
 
 data class DockerEventsCommand(
     val containerNamePrefix: String,

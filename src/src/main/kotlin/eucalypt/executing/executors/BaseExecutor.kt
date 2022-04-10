@@ -2,7 +2,7 @@ package eucalypt.executing.executors
 
 import eucalypt.docker.DockerContainer
 import eucalypt.docker.DockerContainerState
-import eucalypt.docker.DockerExecCommand
+import eucalypt.docker.commands.DockerExecCommand
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
