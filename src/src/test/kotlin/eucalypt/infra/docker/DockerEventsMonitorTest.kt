@@ -143,13 +143,4 @@ class DockerEventsMonitorTest {
         verify { mockJob.cancel(any()) }
         verify { mockChannel.cancel() }
     }
-
-    @Test
-    fun `stop - invoked without start - throws`(): Unit = runBlocking {
-        // arrange
-        val monitor = DockerEventsMonitor(settings, dockerOperator, logger)
-
-        // act, assert
-        assertThrows<DockerMonitorException> {  monitor.stop() }
-    }
 }

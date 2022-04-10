@@ -48,7 +48,7 @@ class HTTPServerImpl(private val logger: Logger) : HTTPServer {
         Runtime.getRuntime().addShutdownHook(Thread {
             logger.info("Shutting down HTTP server gracefully by signal")
             runBlocking { onShutdown() }
-            server.stop(1, 3, TimeUnit.SECONDS)
+            server.stop(1, 2, TimeUnit.SECONDS)
         })
 
         withContext(Dispatchers.IO) {

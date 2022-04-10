@@ -61,10 +61,6 @@ internal class DockerEventsMonitor (
     }
 
     override fun stop() {
-        if (monitorJob == null) {
-            throw DockerMonitorException("Docker monitor not started")
-        }
-
         monitorJob?.cancel(CancellationException("Docker monitor stopped"))
         monitorJob = null
         eventsChannel?.cancel()
