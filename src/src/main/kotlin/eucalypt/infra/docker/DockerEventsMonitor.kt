@@ -71,8 +71,6 @@ internal class DockerEventsMonitor (
         eventsChannel = null
         scope.cancel()
 
-        subscribers.clear()
-
         logger.info("Docker events monitor stopped")
     }
 

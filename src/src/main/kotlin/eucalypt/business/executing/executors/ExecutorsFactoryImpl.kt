@@ -3,16 +3,14 @@ package eucalypt.business.executing.executors
 import eucalypt.infra.docker.DockerContainer
 import eucalypt.infra.docker.DockerEventsFeed
 import eucalypt.infra.docker.DockerOperator
-import eucalypt.infra.utils.LoggerFactory
+import org.slf4j.Logger
 import java.util.*
 
 internal class ExecutorsFactoryImpl(
     private val dockerEventsFeed: DockerEventsFeed,
     private val dockerOperator: DockerOperator,
-    loggerFactory: LoggerFactory
+    private val executorsLogger: Logger,
 ) : ExecutorsFactory {
-    private val executorsLogger = loggerFactory.getLogger(Executor::class.java)
-
     override suspend fun create(namePrefix: String, type: ExecutorType): BaseExecutor {
         val containerName = getNewContainerName(namePrefix, type)
 
