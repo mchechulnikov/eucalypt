@@ -1,15 +1,17 @@
 package eucalypt.business.executing.executors
 
 import eucalypt.infra.docker.DockerContainer
+import eucalypt.infra.docker.DockerContainerImpl
 import eucalypt.infra.docker.commands.DockerExecCommand
 import eucalypt.infra.docker.DockerImage
 import eucalypt.infra.docker.commands.DockerRunCommand
 import org.slf4j.Logger
 
+
 internal class DotnetExecutor(
     type: ExecutorType,
     dockerContainer: DockerContainer,
-    logger: Logger
+    logger: Logger,
 ) : BaseExecutor(type, dockerContainer, logger) {
     override val parameters: ExecutorParameters = DotnetExecutor.parameters
 

@@ -51,6 +51,7 @@ abstract class BaseExecutor protected constructor(
 
     override suspend fun tryReserve(): Boolean {
         logger.info("Executor '$id' is trying to reserve")
+
         if (!isReserved.compareAndSet(false, true)) {
             logger.info("Executor '$id' has already been reserved")
             return false
@@ -84,6 +85,7 @@ abstract class BaseExecutor protected constructor(
         setState(ExecutorState.ELIMINATED)
         readinessChannel.send(false)
         dockerContainer.remove()
+        scope.cancel()
     }
 
     protected abstract fun buildExecCommand(script: String): DockerExecCommand

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class DockerContainerTest {
+internal class DockerContainerImplTest {
     @MockK
     lateinit var dockerOperator: DockerOperator
 
@@ -40,7 +40,7 @@ internal class DockerContainerTest {
     @Test
     fun `run - invoked - subscribe by DockerEventFeed and runContainer by DockerOperator`() = runBlocking {
         // act
-        val dockerContainer = DockerContainer.run(name, runCmd, dockerOperator, eventsFeed)
+        val dockerContainer = DockerContainerImpl.run(name, runCmd, dockerOperator, eventsFeed)
 
         // assert
         assertNotNull(dockerContainer)
@@ -51,7 +51,7 @@ internal class DockerContainerTest {
     @Test
     fun `getStateChannel - container ran - initialized`() = runBlocking {
         // assert
-        val dockerContainer = DockerContainer.run(name, runCmd, dockerOperator, eventsFeed)
+        val dockerContainer = DockerContainerImpl.run(name, runCmd, dockerOperator, eventsFeed)
 
         // act
         val stateChannel = dockerContainer.stateChannel
@@ -79,7 +79,7 @@ internal class DockerContainerTest {
             every { eventsFeed.subscribe(name, captureLambda()) } answers {
                 lambda<suspend (DockerEvent) -> Unit>().coInvoke(DockerEvent(name, event))
             }
-            val dockerContainer = DockerContainer.run(name, runCmd, dockerOperator, eventsFeed)
+            val dockerContainer = DockerContainerImpl.run(name, runCmd, dockerOperator, eventsFeed)
 
             // act
             val stateChannel = dockerContainer.stateChannel
@@ -99,7 +99,7 @@ internal class DockerContainerTest {
         val mockJob = mockk<Job>()
         val mockChannel = mockk<ReceiveChannel<String>>()
         every { dockerOperator.exec(name, any()) } returns (mockJob to mockChannel)
-        val dockerContainer = DockerContainer.run(name, runCmd, dockerOperator, eventsFeed)
+        val dockerContainer = DockerContainerImpl.run(name, runCmd, dockerOperator, eventsFeed)
 
         // act
         val (job, channel) = dockerContainer.exec(execCmd)
@@ -113,7 +113,7 @@ internal class DockerContainerTest {
     @Test
     fun `rerun - invoked - remove and run container by DockerOperator`() = runBlocking {
         // arrange
-        val dockerContainer = DockerContainer.run(name, runCmd, dockerOperator, eventsFeed)
+        val dockerContainer = DockerContainerImpl.run(name, runCmd, dockerOperator, eventsFeed)
 
         // act
         dockerContainer.rerun()
@@ -126,7 +126,7 @@ internal class DockerContainerTest {
     @Test
     fun `remove - invoked - unsubscribe by DockerEventFeed and remove by DockerOperator`() = runBlocking {
         // arrange
-        val dockerContainer = DockerContainer.run(name, runCmd, dockerOperator, eventsFeed)
+        val dockerContainer = DockerContainerImpl.run(name, runCmd, dockerOperator, eventsFeed)
 
         // act
         dockerContainer.remove()
@@ -139,7 +139,7 @@ internal class DockerContainerTest {
     @Test
     fun `toString - invoked - container name`() = runBlocking {
         // arrange
-        val dockerContainer = DockerContainer.run(name, runCmd, dockerOperator, eventsFeed)
+        val dockerContainer = DockerContainerImpl.run(name, runCmd, dockerOperator, eventsFeed)
 
         // act
         val result = dockerContainer.toString()

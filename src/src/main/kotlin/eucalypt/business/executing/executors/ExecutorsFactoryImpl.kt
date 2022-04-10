@@ -1,6 +1,6 @@
 package eucalypt.business.executing.executors
 
-import eucalypt.infra.docker.DockerContainer
+import eucalypt.infra.docker.DockerContainerImpl
 import eucalypt.infra.docker.DockerEventsFeed
 import eucalypt.infra.docker.DockerOperator
 import org.slf4j.Logger
@@ -20,7 +20,7 @@ internal class ExecutorsFactoryImpl(
 
         val executor = when (type) {
             ExecutorType.DOTNET6 -> {
-                val dockerContainer = DockerContainer.run(
+                val dockerContainer = DockerContainerImpl.run(
                     containerName,
                     DotnetExecutor.buildRunCommand(containerName),
                     dockerOperator,
