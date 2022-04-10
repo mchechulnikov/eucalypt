@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
-internal class DockerImageTest {
+internal class DockerOperatorImplImageTest {
     @Test
     fun `ctor - empty name - exception`() {
         assertFailsWith<IllegalArgumentException>(

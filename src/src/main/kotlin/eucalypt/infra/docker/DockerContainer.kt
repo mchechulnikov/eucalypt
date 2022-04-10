@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 class DockerContainer private constructor(
     val name: String,
     private val runCommand: DockerRunCommand,
+    private val dockerOperator: DockerOperator,
     private val eventsFeed: DockerEventsFeed
 ) {
     private var currentState: DockerContainerState = DockerContainerState.STOPPED
@@ -20,27 +21,28 @@ class DockerContainer private constructor(
         suspend fun run(
             name: String,
             command: DockerRunCommand,
+            dockerOperator: DockerOperator,
             eventsFeed: DockerEventsFeed
         ): DockerContainer {
-            val container = DockerContainer(name, command, eventsFeed)
+            val container = DockerContainer(name, command, dockerOperator, eventsFeed)
             eventsFeed.subscribe(name) { container.handleEvent(it) }
 
-            Docker.runContainer(command)
+            dockerOperator.runContainer(command)
 
             return container
         }
     }
 
-    fun exec(command: DockerExecCommand) = Docker.exec(name, command)
+    fun exec(command: DockerExecCommand) = dockerOperator.exec(name, command)
 
     suspend fun rerun() {
-        Docker.removeContainer(name)
-        Docker.runContainer(runCommand)
+        dockerOperator.removeContainer(name)
+        dockerOperator.runContainer(runCommand)
     }
 
     suspend fun remove() {
         eventsFeed.unsubscribe(name)
-        Docker.removeContainer(name)
+        dockerOperator.removeContainer(name)
         stateChangeChannel.cancel()
     }
 

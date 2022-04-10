@@ -2,11 +2,13 @@ package eucalypt.business.executing.executors
 
 import eucalypt.infra.docker.DockerContainer
 import eucalypt.infra.docker.DockerEventsFeed
+import eucalypt.infra.docker.DockerOperator
 import eucalypt.infra.utils.LoggerFactory
 import java.util.*
 
 internal class ExecutorsFactoryImpl(
     private val dockerEventsFeed: DockerEventsFeed,
+    private val dockerOperator: DockerOperator,
     loggerFactory: LoggerFactory
 ) : ExecutorsFactory {
     private val executorsLogger = loggerFactory.getLogger(Executor::class.java)
@@ -19,6 +21,7 @@ internal class ExecutorsFactoryImpl(
                 val dockerContainer = DockerContainer.run(
                     containerName,
                     DotnetExecutor.buildRunCommand(containerName),
+                    dockerOperator,
                     dockerEventsFeed
                 )
                 DotnetExecutor(type, dockerContainer, executorsLogger)

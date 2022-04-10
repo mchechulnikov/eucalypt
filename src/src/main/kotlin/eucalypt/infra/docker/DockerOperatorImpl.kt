@@ -8,24 +8,17 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 
-internal object Docker {
-    suspend fun isImageExists(image: String): Boolean =
-        runDocker(arrayOf("images", "-q", image)).isNotEmpty()
-
-    suspend fun pullImage(image: String) {
-        runDocker(arrayOf("pull", image))
-    }
-
-    suspend fun getContainerNames(namePrefix: String) : List<String> {
+internal class DockerOperatorImpl : DockerOperator {
+    override suspend fun getContainerNames(namePrefix: String) : List<String> {
         val r = runDocker(arrayOf("ps", "-a", "--filter", "name=$namePrefix", "--format", "{{.Names}}"))
         return r.split("\n").filter { it.isNotEmpty() }
     }
 
-    suspend fun runContainer(name: String, image: String) {
+    override suspend fun runContainer(name: String, image: String) {
         runDocker(arrayOf("run", "-d", "-it", "-m=100", "--cpus=1.5", "--network", "none", "--name", name, image))
     }
 
-    suspend fun runContainer(cmd: DockerRunCommand) {
+    override suspend fun runContainer(cmd: DockerRunCommand) {
         val args =
             """
                 run -d -it
@@ -45,20 +38,15 @@ internal object Docker {
         runDocker(args);
     }
 
-    suspend fun restartContainer(container: String) {
-        // -t 0 provides instant restart
-        runDocker(arrayOf("restart", "-t", "0", container))
-    }
-
-    suspend fun removeContainer(container: String) {
+    override suspend fun removeContainer(container: String) {
         runDocker(arrayOf("rm", "-f", container))
     }
 
-    suspend fun removeContainers(containers: List<String>) {
+    override suspend fun removeContainers(containers: List<String>) {
         runDocker(arrayOf("rm", "-f") + containers)
     }
 
-    fun exec(container: String, cmd: DockerExecCommand): Pair<Job, Channel<String>> {
+    override fun exec(container: String, cmd: DockerExecCommand): Pair<Job, Channel<String>> {
         val channel = Channel<String>(100, onBufferOverflow = BufferOverflow.DROP_OLDEST)
         val args =
             """
@@ -76,7 +64,7 @@ internal object Docker {
         return readStreamByLines("docker", args + cmd.command, channel) to channel
     }
 
-    fun monitorEvents(cmd: DockerEventsCommand): Pair<Job, ReceiveChannel<String>> {
+    override fun monitorEvents(cmd: DockerEventsCommand): Pair<Job, ReceiveChannel<String>> {
         val channel = Channel<String>(Channel.UNLIMITED)
         val args = buildString {
             appendLine("events")
@@ -109,17 +97,6 @@ internal object Docker {
 
         stdout
     }
-
-//    private suspend fun runCmdIgnoringError(cmd: String, args: Array<String>): String = withContext(Dispatchers.IO) {
-//        val builder = ProcessBuilder(cmd, *args)
-//        builder.redirectErrorStream(true)
-//        val process = builder.start()
-//        val stdout = process.inputStream.bufferedReader().readText()
-//
-//        process.waitFor()
-//
-//        stdout
-//    }
 
     private fun readStreamByLines(cmd: String, args: Array<String>, channel: Channel<String>): Job {
         val builder = ProcessBuilder(cmd, *args)

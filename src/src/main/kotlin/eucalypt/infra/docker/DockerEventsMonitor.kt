@@ -7,6 +7,7 @@ import org.slf4j.Logger
 
 internal class DockerEventsMonitor (
     private val settings: DockerEventMonitorSettings,
+    private val dockerOperator: DockerOperator,
     private val logger: Logger
 ): DockerMonitorManager, DockerEventsFeed {
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -27,7 +28,7 @@ internal class DockerEventsMonitor (
             throw DockerMonitorException("Docker monitor already started")
         }
 
-        val (job, channel) = Docker.monitorEvents(DockerEventsCommand(
+        val (job, channel) = dockerOperator.monitorEvents(DockerEventsCommand(
             containerNamePrefix = settings.containersPrefix,
             eventTypes = listOf(
                 "create", "start", "restart",

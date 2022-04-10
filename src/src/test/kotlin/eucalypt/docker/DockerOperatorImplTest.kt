@@ -1,20 +1,24 @@
 package eucalypt.docker
 
-import eucalypt.infra.docker.Docker
-import kotlinx.coroutines.CoroutineScope
+import eucalypt.infra.docker.DockerOperator
+import eucalypt.infra.docker.commands.DockerEventsCommand
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
-import java.time.ZonedDateTime
+import org.koin.java.KoinJavaComponent.inject
 import java.util.*
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class DockerTest {
+internal class DockerOperatorImplTest {
+    private val dockerOperator : DockerOperator by inject(DockerOperator::class.java)
+
     private val imageName = "busybox"
     private val imageTag = "1.35.0"
     private val tmpTag = "tmp"
@@ -43,72 +47,15 @@ internal class DockerTest {
     }
 
     @Test
-    fun `isImageExists - image exists - true`() = runBlocking {
-        // arrange
-        pullImage(fullImageName)
-
-        // act, assert
-        assertTrue { Docker.isImageExists(fullImageName) }
-    }
-
-    @Test
-    fun `isImageExists - image doesn't exist - false`() = runBlocking {
-        // arrange
-        assertTrue { Docker.isImageExists(fullImageName) }
-        changeImageTag(imageName, imageTag, tmpTag)
-        removeImage(fullImageName)
-
-        // act, assert
-        assertFalse { Docker.isImageExists(fullImageName) }
-
-        // restore
-        changeImageTag(imageName, tmpTag, imageTag)
-        removeImage(fullTmpImageName)
-        removeImage(fullLatestImageName)
-    }
-
-    @Test
-    fun `pullImage - image doesn't exists - image pulled`() = runBlocking {
-        // arrange
-        changeImageTag(imageName, imageTag, tmpTag)
-        removeImage(fullImageName)
-
-        // act
-        Docker.pullImage(fullImageName)
-
-        // assert
-        assertNotEquals("", runCmd("docker", "images -q $fullImageName"))
-
-        // restore
-        changeImageTag(imageName, tmpTag, imageTag)
-        removeImage(fullTmpImageName)
-        removeImage(fullLatestImageName)
-    }
-
-    @Test
     fun `runContainer - happy path - container created`() = runBlocking {
         // arrange
         val containerName = generateContainerName()
 
         // act
-        Docker.runContainer(containerName, imageName)
+        dockerOperator.runContainer(containerName, imageName)
 
         // assert
         assertContainerExists(containerName)
-    }
-
-    @Test
-    fun `restartContainer - happy path - container restarted`() = runBlocking {
-        // arrange
-        val containerName = runContainer()
-        val startTime = getContainerStartDateTime(containerName)
-
-        // act
-        Docker.restartContainer(containerName)
-
-        // assert
-        assertContainerExists(containerName)
-        assertNotEquals(startTime, getContainerStartDateTime(containerName))
     }
 
     @Test
@@ -117,7 +64,7 @@ internal class DockerTest {
         val containerName = runContainer()
 
         // act
-        Docker.removeContainer(containerName)
+        dockerOperator.removeContainer(containerName)
 
         // assert
         assertContainerDoesNotExists(containerName)
@@ -139,10 +86,14 @@ internal class DockerTest {
     fun `monitorEvents - pause & unpause container - events received`() = runBlocking {
         // arrange
         val containerName = runContainer()
-        val channel = Channel<String>(Channel.UNLIMITED)
 
         // act
-        val job = Docker.monitorEvents(containerName, channel)
+        val (job, channel) = dockerOperator.monitorEvents(DockerEventsCommand(
+            containerNamePrefix = containerName,
+            eventTypes = listOf("pause", "unpause"),
+            format = "{{.Actor.Attributes.name}},{{.Status}}",
+            sinceMs = System.currentTimeMillis().toString(),
+        ))
         var log = ""
         val logJob = launch {
             repeat(2) {
@@ -207,11 +158,6 @@ internal class DockerTest {
 
     private fun unpauseContainer(container: String) {
         runCmd("docker", "unpause $container")
-    }
-
-    private fun getContainerStartDateTime(containerName: String): ZonedDateTime {
-        val dateTimeString = runCmd("docker", "inspect $containerName --format {{.State.StartedAt}}").trim()
-        return ZonedDateTime.parse(dateTimeString)
     }
 
     private fun runCmd(cmd: String, args: String): String = runBlocking(Dispatchers.IO) {
