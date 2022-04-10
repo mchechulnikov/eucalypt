@@ -16,10 +16,16 @@ internal class DockerEventsMonitor (
     private val subscribers = mutableMapOf<String, suspend (DockerEvent) -> Unit>()
 
     override fun subscribe(container: String, callback: suspend (DockerEvent) -> Unit) {
+        if (container in subscribers) {
+            throw IllegalArgumentException("Container $container is already subscribed")
+        }
         subscribers[container] = callback
     }
 
     override fun unsubscribe(container: String) {
+        if (container !in subscribers) {
+            throw IllegalArgumentException("Container $container is not subscribed")
+        }
         subscribers.remove(container)
     }
 
@@ -55,11 +61,17 @@ internal class DockerEventsMonitor (
     }
 
     override fun stop() {
+        if (monitorJob == null) {
+            throw DockerMonitorException("Docker monitor not started")
+        }
+
         monitorJob?.cancel(CancellationException("Docker monitor stopped"))
         monitorJob = null
         eventsChannel?.cancel()
         eventsChannel = null
         scope.cancel()
+
+        subscribers.clear()
 
         logger.info("Docker events monitor stopped")
     }

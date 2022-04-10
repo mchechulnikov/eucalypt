@@ -4,7 +4,6 @@ import eucalypt.infra.docker.commands.DockerEventsCommand
 import eucalypt.infra.docker.commands.DockerExecCommand
 import eucalypt.infra.docker.commands.DockerRunCommand
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 
 interface DockerOperator {
