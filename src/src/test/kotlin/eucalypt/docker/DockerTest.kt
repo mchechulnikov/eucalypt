@@ -1,5 +1,6 @@
 package eucalypt.docker
 
+import eucalypt.infra.docker.Docker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel

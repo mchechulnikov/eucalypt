@@ -1,11 +1,10 @@
 package eucalypt
 
-import eucalypt.docker.DockerEventMonitorSettings
-import eucalypt.executing.executors.ExecutorType
-import eucalypt.executing.ExecutorsManagerSettings
-import eucalypt.executing.pool.ExecutorsPoolSettings
-import eucalypt.running.ScriptRunnerSettings
-import java.util.*
+import eucalypt.business.executing.ExecutorsManagerSettings
+import eucalypt.business.executing.executors.ExecutorType
+import eucalypt.business.executing.pool.ExecutorsPoolSettings
+import eucalypt.business.ScriptRunnerSettings
+import eucalypt.infra.docker.DockerEventMonitorSettings
 
 internal object Config {
     private const val poolName = "eucalypt-executor-main"

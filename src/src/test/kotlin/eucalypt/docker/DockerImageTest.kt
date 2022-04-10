@@ -1,5 +1,6 @@
 package eucalypt.docker
 
+import eucalypt.infra.docker.DockerImage
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.Test

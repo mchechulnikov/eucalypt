@@ -1,20 +1,22 @@
 package eucalypt
 
-import eucalypt.docker.DockerEventMonitorSettings
-import eucalypt.docker.DockerEventsFeed
-import eucalypt.docker.DockerEventsMonitor
-import eucalypt.docker.DockerMonitorManager
-import eucalypt.executing.ExecutorsManager
-import eucalypt.executing.ExecutorsManagerImpl
-import eucalypt.executing.ExecutorsManagerSettings
-import eucalypt.executing.executors.ExecutorsFactory
-import eucalypt.executing.executors.ExecutorsFactoryImpl
-import eucalypt.executing.pool.*
-import eucalypt.running.ScriptRunner
-import eucalypt.running.ScriptRunnerImpl
-import eucalypt.running.ScriptRunnerSettings
-import eucalypt.utils.LoggerFactory
-import eucalypt.utils.LoggerFactoryImpl
+import eucalypt.business.executing.ExecutorsManager
+import eucalypt.business.executing.ExecutorsManagerImpl
+import eucalypt.business.executing.ExecutorsManagerSettings
+import eucalypt.business.executing.executors.ExecutorsFactory
+import eucalypt.business.executing.executors.ExecutorsFactoryImpl
+import eucalypt.business.executing.pool.*
+import eucalypt.business.ScriptRunner
+import eucalypt.business.ScriptRunnerImpl
+import eucalypt.business.ScriptRunnerSettings
+import eucalypt.http.HTTPServer
+import eucalypt.http.HTTPServerImpl
+import eucalypt.infra.docker.DockerEventMonitorSettings
+import eucalypt.infra.docker.DockerEventsFeed
+import eucalypt.infra.docker.DockerEventsMonitor
+import eucalypt.infra.docker.DockerMonitorManager
+import eucalypt.infra.utils.LoggerFactory
+import eucalypt.infra.utils.LoggerFactoryImpl
 import org.koin.dsl.binds
 import org.koin.dsl.module
 
@@ -35,16 +37,26 @@ val compositionRoot = module {
         val logger = get<LoggerFactory>().getLogger(ExecutorsPoolGarbageCollectorImpl::class.java)
         ExecutorsPoolGarbageCollectorImpl(get(), logger)
     }
+
     single {
         val logger = get<LoggerFactory>().getLogger(ExecutorsPoolImpl::class.java)
         ExecutorsPoolImpl(get(), get(), get(), logger)
     } binds arrayOf(ExecutorsPool::class, ExecutorsPoolManager::class)
 
     single<ExecutorsFactory> { ExecutorsFactoryImpl(get(), get()) }
-    single<ExecutorsManager> { ExecutorsManagerImpl(get(), get()) }
+
+    single<ExecutorsManager> {
+        val logger = get<LoggerFactory>().getLogger(ExecutorsManagerImpl::class.java)
+        ExecutorsManagerImpl(get(), get(), logger)
+    }
 
     single<ScriptRunner> {
         val logger = get<LoggerFactory>().getLogger(ScriptRunnerImpl::class.java)
         ScriptRunnerImpl(get(), get(), logger)
+    }
+
+    single<HTTPServer> {
+        val logger = get<LoggerFactory>().getLogger(HTTPServerImpl::class.java)
+        HTTPServerImpl(logger)
     }
 }
