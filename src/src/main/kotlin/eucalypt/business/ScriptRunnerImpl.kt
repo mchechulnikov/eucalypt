@@ -17,6 +17,10 @@ internal class ScriptRunnerImpl(
     private val logger: Logger,
 ) : ScriptRunner {
     override suspend fun run(script: String, type: ScriptType): Result<String> {
+        if (script.isBlank()) {
+            return Result.failure(Error("Script is empty"))
+        }
+
         type
             .let(::getExecutorType)
             .let { executorsManager.borrowExecutor(it) }
