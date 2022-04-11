@@ -160,18 +160,35 @@ graph TB
         DockerOperator["DockerOperator <br/><br/> - run container <br/> - re-run container <br/> - remove container <br/> - monitor Docker events"]:::Code
         
 
-        HTTPServer --> ScriptRunner -- borrow executor --> ExecutorsManager
+        HTTPServer --> ScriptRunner -- borrow/redeem executor --> ExecutorsManager
         ExecutorsManager -- get available --> ExecutorsPool
         ScriptRunner -- execute --> Executor
         ExecutorsPool -- manage --> Executor
         ExecutorsManager -- reserve --> Executor
         Executor -- contol --> DockerContainer
-        DockerContainer -. sync state .-> Executor
+        DockerContainer -. state change event .-> Executor
         DockerContainer -- subscribe --> DockerEventsMonitor
+        DockerContainer -- contol --> DockerOperator
         DockerEventsMonitor -. invoke callback to udapte state .-> DockerContainer
         DockerEventsMonitor -- listen events --> DockerOperator
-        DockerContainer -- contol --> DockerOperator
+        DockerOperator -. docker container event .-> DockerEventsMonitor
     end
+
+    DockerOperator -- CLI: docker run/exec/etc container--> Daemon
+    DockerOperator -- CLI: docker events--> Daemon
+
+    subgraph Docker 
+        Daemon
+
+        Daemon --> Container1
+        Daemon --> Container2
+
+        subgraph Containers
+            Container1
+            Container2
+        end
+    end
+
 
     classDef Code fill: white, stroke: black
     classDef Pool fill: white, stroke: black, stroke-dasharray: 5 5
@@ -302,7 +319,7 @@ stateDiagram-v2
     READY --> ELIMINATED: shrink pool size
     ELIMINATED --> [*]: destroy
 ```
-This diagram a bit incomplete because there are several cases when container goes to unexpected state by third reasons:
+This diagram a bit incomplete because there are several cases when container goes to unexpected state by third party reasons (somebody stopped a container manually):
 * container stopped: \<ANY STATE\> --> RESET 
 * container paused: \<ANY STATE\> --> RESET 
 * container deleted: \<ANY EXCEPT RESET\> --> ELIMINATED
@@ -317,8 +334,8 @@ stateDiagram-v2
     RUNNING --> PAUSED: pause
     PAUSED --> RUNNING: unpause
     RUNNING --> STOPPED: kil, die, oom, stop
-    STOPPED --> DESTROYED: destroy
-    DESTROYED --> [*]
+    STOPPED --> DELETED: destroy
+    DELETED --> [*]
 ```
 Full Docker containers states
 ![src](docs/container-states.png)
