@@ -48,6 +48,11 @@ dotnet.fib:			# POST /dotnet		<-- BODY: ./examples/fib.cs
 		--data-binary @./examples/fib.cs \
 		$(BASE_URL)/dotnet
 
+dotnet.net:			# POST /dotnet		<-- BODY: ./examples/net.cs
+	@ curl -X POST \
+		--data-binary @./examples/net.cs \
+		$(BASE_URL)/dotnet
+
 shutdown:			# POST /shutdown	<-- shuts down server gracefully
 	@ curl -X POST \
 		$(BASE_URL)/shutdown

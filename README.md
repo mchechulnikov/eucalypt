@@ -57,6 +57,7 @@ make dotnet.fib     # Fibonacci numbers up to 42
 make dotnet.fio     # writes some lines to file and reads it
 make dotnet.inf     # infinity operation: aborted by timeout and prints stdout
 make dotnet.inv     # invalid code that doesn't compile
+make dotnet.net     # attempt of HTTP GET request
 ```
 
 For example:
