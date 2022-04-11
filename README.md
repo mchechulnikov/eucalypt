@@ -310,7 +310,7 @@ stateDiagram-v2
     RELEASED --> RESET: reset 
 
     %% execution not started or starvation
-    RESERVED --> RESET: double timeout
+    RESERVED --> RESET: timeout
     EXECUTING --> RESET: timeout
     
     %% reset
