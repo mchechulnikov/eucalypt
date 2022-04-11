@@ -195,7 +195,7 @@ graph TB
     classDef Pool fill: white, stroke: black, stroke-dasharray: 5 5
 ```
 
-## Scenarious
+## Scenarios
 A couple of scenarious for example
 
 ### Happy path
