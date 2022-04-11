@@ -268,6 +268,7 @@ sequenceDiagram
 ```
 
 ### Pool management processes
+#### Execturos
 Executor represents resource of execution. To execure something, you need to reserve executor and then executre on it. <br/>
 Executors have several states:
 * NEW – just created; should be checked for readiness
@@ -301,10 +302,33 @@ stateDiagram-v2
     READY --> ELIMINATED: shrink pool size
     ELIMINATED --> [*]: destroy
 ```
-This diagram a bit incomplete because there are several cased when container goes to unexpected state by third reasons
+This diagram a bit incomplete because there are several cases when container goes to unexpected state by third reasons:
+* container stopped: \<ANY STATE\> --> RESET 
+* container paused: \<ANY STATE\> --> RESET 
+* container deleted: \<ANY EXCEPT RESET\> --> ELIMINATED
 
-### Containers states
+
+#### Containers states
+``` mermaid
+stateDiagram-v2
+    [*] --> STOPPED: create
+    STOPPED --> RUNNING: start
+    RUNNING --> RUNNING: restart
+    RUNNING --> PAUSED: pause
+    PAUSED --> RUNNING: unpause
+    RUNNING --> STOPPED: kil, die, oom, stop
+    STOPPED --> DESTROYED: destroy
+    DESTROYED --> [*]
+```
+Full Docker containers states
 ![src](docs/container-states.png)
+
+#### Pool mamangemnt
+* collect a garbage: when pool starts it checks containers from previous runs and kill them
+* extend: if there are no available executors in the pool, the pool quickly creates one and returns, and then starts async the expansion procedure: it doubles its size
+* shrink: at a certain interval, the pool checks the number of idle executors and if there are more than twice the number of idle workers than the value from the settings, then it is halved
+* detect hanged: at a certain interval checks the executors who hang in statuses RESERVED, EXECUTING, RELEASED, RESET for a long time and forcly reset them
+
 
 ## What's next?
 * Handle case when there are no pre-build executors images
