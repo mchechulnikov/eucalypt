@@ -178,6 +178,8 @@ graph TB
 ```
 
 ## Scenarious
+A couple of scenarious for example
+
 ### Happy path
 ``` mermaid
 sequenceDiagram
@@ -266,6 +268,7 @@ sequenceDiagram
 ```
 
 ### Pool management processes
+Executor represents resource of execution. To execure something, you need to reserve executor and then executre on it. <br/>
 Executors have several states:
 * NEW – just created; should be checked for readiness
 * READY – ready for execution
@@ -298,67 +301,13 @@ stateDiagram-v2
     READY --> ELIMINATED: shrink pool size
     ELIMINATED --> [*]: destroy
 ```
+This diagram a bit incomplete because there are several cased when container goes to unexpected state by third reasons
 
-#### Executor creating
-``` mermaid
-sequenceDiagram
-    activate Pool Manager
-        Pool Manager ->> Pool Manager: register executor
-        note right of Pool Manager: state of executor is CREATED
-
-        Pool Manager ->> Pool: create container
-        activate Pool
-            Pool -->> Pool Manager: command executed
-        deactivate Pool
-
-        loop poll every N ms
-            Pool Manager ->> Pool: check if container in ready state
-            activate Pool
-        end
-
-        Pool -->> Pool Manager: container is ready!
-        deactivate Pool
-
-        Pool Manager ->> Pool Manager: enable executor
-        note right of Pool Manager: state of executor is READY
-
-    deactivate Pool Manager
-```
-
-#### Release and reset executor
-``` mermaid
-sequenceDiagram
-    note right of Task Runner: ...
-    Task Runner -) Pool Manager: ASYNC return used executor
-    activate Pool Manager
-        Pool Manager ->> Pool Manager: release executor
-        note right of Pool Manager: state of executor is RELEASED
-    deactivate Pool Manager
-
-    note right of Pool Manager: force to start reset operation
-    activate Pool Manager
-        Pool Manager ->> Pool Manager: reset executor
-        note right of Pool Manager: state of executor is RESET
-
-        Pool Manager ->> Pool: reset executor
-        activate Pool
-            Pool -->> Pool Manager: command executed
-        deactivate Pool
-
-        loop poll every N ms
-            Pool Manager ->> Pool: check if container in ready state
-            activate Pool
-        end
-
-        Pool -->> Pool Manager: container is ready!
-        deactivate Pool
-
-        Pool Manager ->> Pool Manager: enable executor for further executions
-        note right of Pool Manager: state of executor is READY
-    deactivate Pool Manager
-```
+### Containers states
+![src](docs/container-states.png)
 
 ## What's next?
+* Handle case when there are no pre-build executors images
 * Configuration files instead of hard-coded `Config` object to configure withour rebuild
 * WebSockets to consume running script output line-by-line. That makes execution more interactive for end user
 * Containerize server. This require some changes: operating containers from another container has some difficulties and requires paradigm changing. But in this case I'd prefer to delegate pool management to orchestration tool like [Kubernates](https://kubernetes.io)
