@@ -182,80 +182,87 @@ graph TB
 ``` mermaid
 sequenceDiagram
     actor User
+    participant HTTPServer
+    participant ScriptRunner
+    participant ExecutorsManager
+    participant ExecutorsPool
+    participant Executor
 
-    User ->> HTTP Handler: execute sctipt
-    activate HTTP Handler
-        HTTP Handler ->> HTTP Handler: wrap request to task
-
-        HTTP Handler ->> Task Runner: run task
-        activate Task Runner
-            Task Runner ->> Pool Manager: get executor
-            activate Pool Manager
-                Pool Manager ->> Pool Manager: are there any ready executors?
+    User ->> HTTPServer: execute sctipt
+    activate HTTPServer
+        HTTPServer ->> ScriptRunner: run script
+        activate ScriptRunner
+            ScriptRunner ->> ExecutorsManager: get executor
+            activate ExecutorsManager
+                ExecutorsManager ->> ExecutorsManager: are there any ready executors?
                 alt THERE ARE!
-                    Pool Manager ->> Pool Manager: reserve executor by ID
+                    ExecutorsManager ->> Executor: reserve executor
                 else THERE AREN'T!
-                    Pool Manager ->> Pool Manager: register new executor ID
+                    activate ExecutorsPool
+                        ExecutorsPool ->> ExecutorsPool: register new executor
+                        ExecutorsPool -->> ExecutorsManager: new executor
+                    deactivate ExecutorsPool
 
-                    Pool Manager ->> Pool: extend pool
-                    activate Pool
-                        Pool -->> Pool Manager: executor added!
-                    deactivate Pool
+                    ExecutorsPool -) ExecutorsPool: ASYNC extend pool
 
-                    Pool Manager ->> Pool Manager: reserve executor by ID
+                    ExecutorsManager ->> Executor: reserve executor
                 end
                 
-                Pool Manager -->> Task Runner: return reserved executor ID
-            deactivate Pool Manager
+                ExecutorsManager -->> ScriptRunner: return reserved executor
+            deactivate ExecutorsManager
 
-            Task Runner ->> Pool: execute
-            activate Pool
-                Pool -->> Task Runner: result
-            deactivate Pool
+            ScriptRunner ->> Executor: execute
+            activate Executor
+                Executor -->> ScriptRunner: result
+            deactivate Executor
 
-            Task Runner -) Pool Manager: ASYNC return used executor
+            ScriptRunner -) ExecutorsManager: ASYNC return used executor
             
-            Task Runner -->> HTTP Handler: task result
-            note right of Task Runner: immediately return result
-        deactivate Task Runner
+            ScriptRunner -->> HTTPServer: script result
+            note right of ScriptRunner: immediately return result
+        deactivate ScriptRunner
 
-        HTTP Handler -->> User: script result
-    deactivate HTTP Handler
+        HTTPServer -->> User: script result
+    deactivate HTTPServer
 ```
 
 ### Timeout of execution
 ``` mermaid
 sequenceDiagram
     actor User
+    participant HTTPServer
+    participant ScriptRunner
+    participant ExecutorsManager
+    participant ExecutorsPool
+    participant Executor
 
-    User ->> HTTP Handler: execute sctipt
-    activate HTTP Handler
-        HTTP Handler ->> HTTP Handler: wrap request to task
+    User ->> HTTPServer: execute sctipt
+    activate HTTPServer
+        HTTPServer ->> ScriptRunner: run script
+        activate ScriptRunner
+            ScriptRunner ->> ExecutorsManager: get executor
+            activate ExecutorsManager
+                ExecutorsManager -->> ScriptRunner: return reserved executor
+            deactivate ExecutorsManager
 
-        HTTP Handler ->> Task Runner: run task
-        activate Task Runner
-            Task Runner ->> Pool Manager: get executor
-            activate Pool Manager
-                Pool Manager -->> Task Runner: return reserved executor
-            deactivate Pool Manager
+            ScriptRunner ->> Executor: execute
+            alt SUCCESS
+                activate Executor
+                    Executor -->> ScriptRunner: result
+                deactivate Executor
+                ScriptRunner -) ExecutorsManager: ASYNC return used executor
+            else TIMEOUT
+                note right of ScriptRunner: timeout detected
+                ScriptRunner -) ExecutorsManager: ASYNC return used executor
+            end
 
-            Task Runner ->> Pool: execute
-            activate Pool
-                alt SUCCESS
-                    Pool -->> Task Runner: result
-                    Task Runner -) Pool Manager: ASYNC return used executor
-                else TIMEOUT
-                    note right of Task Runner: timeout detected
-                    Task Runner -) Pool Manager: ASYNC reset executor
-                end
-            deactivate Pool
+            
+            ScriptRunner -->> HTTPServer: script result
+            note right of ScriptRunner: immediately return result
+        deactivate ScriptRunner
 
-            Task Runner -->> HTTP Handler: task result
-            note right of Task Runner: immediately return result
-        deactivate Task Runner
-
-        HTTP Handler -->> User: script result
-    deactivate HTTP Handler
+        HTTPServer -->> User: script result
+    deactivate HTTPServer
 ```
 
 ### Pool management processes
