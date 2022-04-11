@@ -24,7 +24,7 @@ internal class ApplicationKtTest {
         val response = client.post("$host/dotnet") { setBody("using System; Console.WriteLine(\"Hello World!\");") }
         val result = response.body<String>()
 
-        // assert
+        // assertw
         assertTrue(result.contains("Script executed successfully"))
         assertTrue(result.contains("Hello World!"))
     }
