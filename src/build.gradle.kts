@@ -13,6 +13,7 @@ plugins {
 
 group = "mchechulnikov"
 version = "0.0.1"
+
 application {
     mainClass.set("mchechulnikov.ApplicationKt")
 
@@ -44,6 +45,18 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
     testImplementation("io.mockk:mockk:1.12.3")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+    }
+}
+
+tasks {
+    compileKotlin {
+        kotlinOptions.jvmTarget = "1.8"
+    }
 }
 
 tasks.test {

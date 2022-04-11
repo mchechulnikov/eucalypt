@@ -10,9 +10,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
-import org.koin.core.context.startKoin
-import org.koin.dsl.module
-import org.koin.java.KoinJavaComponent.inject
 import java.util.*
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -21,8 +18,6 @@ import kotlin.test.assertNotEquals
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class DockerOperatorImplTest {
-    private val dockerOperator : DockerOperator by inject(DockerOperator::class.java)
-
     private val imageName = "busybox"
     private val imageTag = "1.35.0"
     private val containersNames = mutableListOf<String>()
@@ -32,7 +27,6 @@ internal class DockerOperatorImplTest {
 
     @BeforeAll
     fun beforeAll() = runBlocking {
-        startKoin{ modules(module { single<DockerOperator> { DockerOperatorImpl() } }) }
         removeImage(fullTmpImageName)
         removeImage(fullLatestImageName)
         pullImage(fullImageName)
@@ -60,6 +54,7 @@ internal class DockerOperatorImplTest {
         runContainer("$containerNamePrefixA-3")
         runContainer("$containerNamePrefixB-1")
         runContainer("$containerNamePrefixB-2")
+        val dockerOperator = DockerOperatorImpl()
 
         // act
         val namesA = dockerOperator.getContainerNames(containerNamePrefixA)
@@ -89,6 +84,7 @@ internal class DockerOperatorImplTest {
             tmpfsSizeBytes = 4 * 1024 * 1024,
             user = "root",
         )
+        val dockerOperator = DockerOperatorImpl()
 
         // act
         dockerOperator.runContainer(cmd)
@@ -101,6 +97,7 @@ internal class DockerOperatorImplTest {
     fun `removeContainer - happy path - container doesn't exist`() = runBlocking {
         // arrange
         val containerName = runContainer()
+        val dockerOperator = DockerOperatorImpl()
 
         // act
         dockerOperator.removeContainer(containerName)
@@ -114,6 +111,7 @@ internal class DockerOperatorImplTest {
         // arrange
         val container1 = runContainer()
         val container2 = runContainer()
+        val dockerOperator = DockerOperatorImpl()
 
         // act
         dockerOperator.removeContainers(listOf(container1, container2))
@@ -131,6 +129,7 @@ internal class DockerOperatorImplTest {
             command = listOf("pwd"),
             user = "root",
         )
+        val dockerOperator = DockerOperatorImpl()
 
         // act
         val (job, channel) = dockerOperator.exec(containerName, cmd)
@@ -155,6 +154,7 @@ internal class DockerOperatorImplTest {
     fun `monitorEvents - pause & unpause container - events received`() = runBlocking {
         // arrange
         val containerName = runContainer()
+        val dockerOperator = DockerOperatorImpl()
 
         // act
         val (job, channel) = dockerOperator.monitorEvents(DockerEventsCommand(

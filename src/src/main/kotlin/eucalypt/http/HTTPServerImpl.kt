@@ -13,9 +13,12 @@ import org.slf4j.Logger
 import org.slf4j.event.Level
 import java.util.concurrent.TimeUnit
 
-class HTTPServerImpl(private val logger: Logger) : HTTPServer {
+class HTTPServerImpl(
+    private val settings: HTTPServerSettings,
+    private val logger: Logger,
+) : HTTPServer {
     override suspend fun run(onStart: suspend () -> Unit, onShutdown: suspend () -> Unit) {
-        val server = embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
+        val server = embeddedServer(Netty, port = settings.port, host = settings.host) {
             install(DefaultHeaders)
             install(CallLogging) {
                 level = Level.INFO
@@ -48,7 +51,7 @@ class HTTPServerImpl(private val logger: Logger) : HTTPServer {
         Runtime.getRuntime().addShutdownHook(Thread {
             logger.info("Shutting down HTTP server gracefully by signal")
             runBlocking { onShutdown() }
-            server.stop(1, 2, TimeUnit.SECONDS)
+            server.stop(1, settings.gracefulShutdownTimeoutSec, TimeUnit.SECONDS)
         })
 
         withContext(Dispatchers.IO) {

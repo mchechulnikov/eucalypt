@@ -12,6 +12,7 @@ import eucalypt.business.ScriptRunnerSettings
 import eucalypt.business.executing.executors.Executor
 import eucalypt.http.HTTPServer
 import eucalypt.http.HTTPServerImpl
+import eucalypt.http.HTTPServerSettings
 import eucalypt.infra.docker.*
 import eucalypt.infra.docker.DockerEventsMonitor
 import org.koin.dsl.binds
@@ -19,6 +20,7 @@ import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 
 val compositionRoot = module {
+    factory<HTTPServerSettings> { Config.HTTPServerConfig }
     factory<ScriptRunnerSettings> { Config.ScriptRunnerConfig }
     factory<DockerEventMonitorSettings> { Config.DockerEventMonitorConfig }
     factory<ExecutorsPoolSettings> { Config.ExecutorsPoolConfig }
@@ -58,6 +60,6 @@ val compositionRoot = module {
 
     single<HTTPServer> {
         val logger = LoggerFactory.getLogger(HTTPServerImpl::class.java)
-        HTTPServerImpl(logger)
+        HTTPServerImpl(get(), logger)
     }
 }

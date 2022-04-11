@@ -3,12 +3,12 @@ package eucalypt.infra.docker
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
 import org.slf4j.Logger
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class DockerEventsMonitorTest {
     @MockK
     lateinit var settings: DockerEventMonitorSettings
@@ -19,8 +19,8 @@ class DockerEventsMonitorTest {
     @MockK
     lateinit var logger: Logger
 
-    @BeforeAll
-    fun beforeAll() = MockKAnnotations.init(this, relaxUnitFun = true)
+    @BeforeEach
+    fun beforeEach() = MockKAnnotations.init(this, relaxUnitFun = true)
 
     @Test
     fun `subscribe - without start - doesn't throw`() {
@@ -37,9 +37,8 @@ class DockerEventsMonitorTest {
         val containerPrefix = "test"
 
         val monitorJob = mockk<Job>()
-        val monitorChannel = mockk<ReceiveChannel<String>>()
+        val monitorChannel = Channel<String>(Channel.UNLIMITED)
         every { settings.containersPrefix } returns containerPrefix
-        coEvery {  monitorChannel.receive() } returns "$containerPrefix,status"
         every {
             dockerOperator.monitorEvents(match { it.containerNamePrefix == containerPrefix })
         } returns (monitorJob to monitorChannel)
@@ -49,8 +48,8 @@ class DockerEventsMonitorTest {
 
         // act, assert
         assertDoesNotThrow { monitor.subscribe(containerPrefix, callback) }
+        monitorChannel.send("$containerPrefix,status")
         coVerify { callback.invoke(match { it.container == containerPrefix && it.status == "status" }) }
-        coVerify { monitorChannel.receive() }
     }
 
     @Test
@@ -131,16 +130,13 @@ class DockerEventsMonitorTest {
         every { settings.containersPrefix } returns containerPrefix
         val mockJob = mockk<Job>()
         every { mockJob.cancel(any()) } returns Unit
-        val mockChannel = mockk<ReceiveChannel<String>>()
-        coEvery { mockChannel.receive() } returns "test,test"
-        every { mockChannel.cancel(any()) } returns Unit
-        every { dockerOperator.monitorEvents(any()) } answers { mockJob to mockChannel }
+        val channel = Channel<String>(Channel.UNLIMITED)
+        every { dockerOperator.monitorEvents(any()) } answers { mockJob to channel }
         val monitor = DockerEventsMonitor(settings, dockerOperator, logger)
         monitor.start()
 
         // act, assert
         assertDoesNotThrow { monitor.stop() }
         verify { mockJob.cancel(any()) }
-        verify { mockChannel.cancel() }
     }
 }

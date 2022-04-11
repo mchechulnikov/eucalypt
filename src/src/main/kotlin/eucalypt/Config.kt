@@ -4,9 +4,16 @@ import eucalypt.business.executing.ExecutorsManagerSettings
 import eucalypt.business.executing.executors.ExecutorType
 import eucalypt.business.executing.pool.ExecutorsPoolSettings
 import eucalypt.business.ScriptRunnerSettings
+import eucalypt.http.HTTPServerSettings
 import eucalypt.infra.docker.DockerEventMonitorSettings
 
 internal object Config {
+    object HTTPServerConfig : HTTPServerSettings {
+        override val port: Int = 8080
+        override val host: String = "0.0.0.0"
+        override val gracefulShutdownTimeoutSec: Long = 3
+    }
+
     private const val poolName = "eucalypt-executor-main"
 
     object ScriptRunnerConfig : ScriptRunnerSettings {

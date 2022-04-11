@@ -5,25 +5,19 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 internal class ApplicationKtTest {
     private val host = "http://localhost:8080"
     private val client = HttpClient(CIO)
 
-    @AfterAll
-    fun afterAll() = runBlocking {
-        client.close()
-    }
-
     @Test
     fun `main - POST dotnet hello world - result string`() = runBlocking {
         // arrange
-        CoroutineScope(Dispatchers.Unconfined).launch { main(); } // run server
+        CoroutineScope(Dispatchers.IO).launch { main(); } // run server
         delay(3000)
 
         // act
