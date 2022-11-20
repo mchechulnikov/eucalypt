@@ -352,7 +352,7 @@ Full Docker containers states
 * Handle case when there are no pre-build executors images
 * Configuration files instead of hard-coded `Config` object to configure withour rebuild
 * WebSockets to consume running script output line-by-line. That makes execution more interactive for end user
-* Containerize server. This require some changes: operating containers from another container has some difficulties and requires paradigm changing. But in this case I'd prefer to delegate pool management to orchestration tool like [Kubernates](https://kubernetes.io)
+* Containerize server. This require some changes: operating containers from another container has some difficulties and requires paradigm changing. But in this case I'd prefer to delegate pool management to orchestration tool like [Kubernetes](https://kubernetes.io)
 * Run pool on several hosts. Again, it will be reasonable to consider using container orchestrator for that
 * To achieve a posibility to use NuGet it's necessesary: 1) to provide list of packages; 2) make new type of executor with availability to use network by specific URL; 3) Docker network configuration management
 * Support other languanges. Just add executors and wire it up with HTTP interface
